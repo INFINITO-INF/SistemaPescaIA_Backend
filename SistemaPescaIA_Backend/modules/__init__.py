@@ -1,0 +1,1 @@
+"""Paquete contenedor de los módulos de negocio del monolito."""
