@@ -3,175 +3,391 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tienda de Pesca IA - Kiosco & Admin (Sprint 1)</title>
+    <title>Mar & Río Tackle Pro | Kiosco Inteligente de Pesca</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
-    <!-- Barra de Navegación Superior -->
-    <header class="topbar">
-        <div class="brand">
-            <span class="logo-icon">🎣</span>
-            <div>
-                <h1>Sistema Inteligente Tienda de Pesca</h1>
-                <span class="badge-sprint">Incremento Sprint 1 · Monolito Modular</span>
+    <!-- =================================================================== -->
+    <!-- HEADER PRINCIPAL                                                    -->
+    <!-- =================================================================== -->
+    <header class="main-header">
+        <div class="header-container">
+            <a href="javascript:void(0)" class="brand-logo" onclick="regresarPaginaInicial()"
+               data-scrum="Retorno a Pantalla Principal del Kiosco (US001 / CA004 & CA007)">
+                <div class="logo-emblem">🎣</div>
+                <div class="brand-text">
+                    <span class="brand-title">COMERCIAL SERNAQUE</strong></span>
+                    <span class="brand-subtitle">Tienda de Aryiculos de Pesca &amp; Sistema Interactivo</span>
+                </div>
+            </a>
+
+            <nav class="header-nav">
+                <div class="nav-dropdown">
+                    <button class="nav-dropbtn" data-scrum="US002 · Navegación rápida por categorías del catálogo">
+                        🧭 Explorar Equipos <span class="caret">▾</span>
+                    </button>
+                    <div class="nav-dropdown-content" id="menuDesplegableCategorias">
+                    </div>
+                </div>
+
+                <div class="nav-dropdown">
+                    <button class="nav-dropbtn" data-scrum="US009 · Clasificación por entornos y modalidades técnicas">
+                        🌊 Entornos de Pesca <span class="caret">▾</span>
+                    </button>
+                    <div class="nav-dropdown-content">
+                        <a href="javascript:void(0)" onclick="buscarTerminoRapido('Shimano')">🏖️ Pesca de Orilla (Surfcasting)</a>
+                        <a href="javascript:void(0)" onclick="buscarTerminoRapido('Trucha')">🏞️ Ríos y Lagunas Andinas</a>
+                        <a href="javascript:void(0)" onclick="buscarTerminoRapido('Sufix')">🚤 Pesca de Embarcación</a>
+                        <div class="dropdown-divider"></div>
+                        <a href="javascript:void(0)" onclick="ejecutarBusquedaPorCategoria(3, 'Señuelos')">🐟 Todos los Señuelos</a>
+                    </div>
+                </div>
+
+                <div class="nav-dropdown">
+                    <button class="nav-dropbtn" data-scrum="EPIC03 · Estado de conexión con SQL Server en tiempo real">
+                        📡 Estado en Tienda <span class="caret">▾</span>
+                    </button>
+                    <div class="nav-dropdown-content status-dropdown">
+                        <div class="status-item">
+                            <span class="dot-online"></span>
+                            <div>
+                                <strong>Inventario en Tiempo Real</strong>
+                                <small>Sincronizado con Caja Central</small>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <span>🤖</span>
+                            <div>
+                                <strong>Motor IA de Clasificación</strong>
+                                <small id="estadoSaludBackend">Verificando conexión...</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="mode-switcher">
+                <button id="btnVistaCliente" class="mode-btn active" onclick="cambiarVista('cliente')"
+                        data-scrum="Vista del Rol Cliente (EPIC01 y EPIC03: US001, US002, US010, US011)">
+                    🛒 Kiosco deTienda
+                </button>
+                <button id="btnVistaAdmin" class="mode-btn" onclick="cambiarVista('admin')"
+                        data-scrum="Vista del Rol Administrador (EPIC03: US009 y US012)">
+                    ⚙️ Gestión Catálogo
+                </button>
             </div>
         </div>
-        <nav class="role-switcher">
-            <button id="btnVistaCliente" class="role-btn active" onclick="cambiarVista('cliente')">
-                🛒 Kiosco Cliente (US001, US002, US010, US011)
-            </button>
-            <button id="btnVistaAdmin" class="role-btn" onclick="cambiarVista('admin')">
-                ⚙️ Panel Administrador (US009, US012)
-            </button>
-        </nav>
     </header>
 
-    <main class="container">
-        <!-- =================================================================== -->
-        <!-- VISTA 1: KIOSCO DEL CLIENTE                                         -->
-        <!-- =================================================================== -->
-        <section id="vistaCliente" class="view-section active">
-            <!-- US001: Buscador con Autocompletado (CA001 - CA004) -->
-            <div class="search-panel card">
-                <h2>🔍 Buscar Insumos de Pesca (US001)</h2>
-                <div class="search-bar-wrapper">
-                    <div class="input-group">
-                        <input type="text" id="inputBusqueda"
-                               placeholder="Escribe nombre, marca o código SKU (ej. Shimano, Rapala, SEN-RAP-007)..."
-                               autocomplete="off"
-                               oninput="manejarAutocompletado(this.value)"
-                               onkeydown="if(event.key === 'Enter') ejecutarBusquedaTexto()">
-                        <ul id="listaAutocompletado" class="autocomplete-list hidden"></ul>
+    <!-- =================================================================== -->
+    <!-- CONTENIDO PRINCIPAL                                                 -->
+    <!-- =================================================================== -->
+    <main class="main-container">
+
+        <section id="vistaCliente" class="view-section">
+
+            <div class="hero-search-banner">
+                <div class="hero-content">
+                    <span class="nautical-pill" data-scrum="EPIC01 · Búsqueda e Identificación Inteligente">
+                        ⚓ ASISTENTE DE INVENTARIO EN TIENDA
+                    </span>
+                    <h1 data-scrum="US001 · Buscar productos ingresando texto por nombre, código o marca">
+                        Encuentra el equipo exacto para tu próxima captura
+                    </h1>
+                    <p>Consulta existencias físicas al instante, explora especificaciones técnicas o navega por categorías.</p>
+
+                    <div class="search-box-container">
+                        <div class="search-input-wrapper">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="inputBusqueda"
+                                   placeholder="Buscar cañas, carretes, señuelos, marca o código SKU (ej. Shimano, Rapala, SEN-RAP-007)..."
+                                   autocomplete="off"
+                                   data-scrum="US001 / CA001 & CA002 · Entrada de texto con autocompletado tras 3 caracteres"
+                                   oninput="manejarAutocompletado(this.value)"
+                                   onkeydown="if(event.key === 'Enter') ejecutarBusquedaTexto()">
+                            <ul id="listaAutocompletado" class="autocomplete-dropdown hidden"></ul>
+                        </div>
+                        <button class="btn btn-ocean" onclick="ejecutarBusquedaTexto()"
+                                data-scrum="US001 / CA001 · Ejecutar búsqueda directa por coincidencias">
+                            Buscar Equipo
+                        </button>
+                        <button class="btn btn-sand" onclick="limpiarBusquedaUI()"
+                                data-scrum="US001 / CA004 · Limpieza del campo de búsqueda y reinicio de resultados">
+                            Limpiar
+                        </button>
                     </div>
-                    <button class="btn btn-primary" onclick="ejecutarBusquedaTexto()">Buscar (CA001)</button>
-                    <button class="btn btn-secondary" onclick="limpiarBusquedaUI()">Limpiar (CA004)</button>
+
+                    <div class="quick-search-tags">
+                        <span>Búsquedas frecuentes:</span>
+                        <button onclick="buscarTerminoRapido('Shimano')" data-scrum="US001 · Búsqueda rápida por marca">Shimano</button>
+                        <button onclick="buscarTerminoRapido('Rapala')" data-scrum="US001 · Búsqueda rápida por marca">Rapala</button>
+                        <button onclick="buscarTerminoRapido('PowerPro')" data-scrum="US001 · Búsqueda rápida de líneas">Línea PowerPro</button>
+                        <button onclick="buscarTerminoRapido('Yo-Zuri')" data-scrum="US010 / CA025 · Ejemplo de artículo agotado">Yo-Zuri (Ver Agotado)</button>
+                    </div>
                 </div>
-                <small class="hint">💡 Escribe al menos 3 caracteres para activar el autocompletado automático (CA002).</small>
             </div>
 
-            <!-- US002: Navegación por Categorías y Subcategorías (CA005 - CA007) -->
-            <div class="categories-panel card">
-                <div class="section-header">
-                    <h2>📂 Categorías Visuales de Pesca (US002)</h2>
-                    <button id="btnVolverCategorias" class="btn btn-outline hidden" onclick="volverMenuCategoriasUI()">
-                        ⬅ Volver a Categorías Principales (CA007)
+            <div class="surface-card">
+                <div class="card-header-bar">
+                    <div>
+                        <h2 class="section-title" data-scrum="US002 · Navegar por categorías y subcategorías visuales de pesca">
+                            🧭 Categorías Visuales de Pesca
+                        </h2>
+                        <p class="section-subtitle">Selecciona una familia de productos para explorar nuestro catálogo especializado</p>
+                    </div>
+                    <button id="btnVolverCategorias" class="btn btn-outline-teal hidden" onclick="volverMenuCategoriasUI()"
+                            data-scrum="US002 / CA007 · Retorno al menú principal de categorías">
+                        ⬅ Ver Todas las Categorías
                     </button>
                 </div>
-                <div id="contenedorCategorias" class="category-grid"></div>
-                <div id="contenedorSubcategorias" class="subcategory-bar hidden"></div>
+
+                <div id="contenedorCategorias" class="categories-showcase"></div>
+
+                <div id="contenedorSubcategorias" class="subcategories-strip hidden"
+                     data-scrum="US002 / CA006 · Refinamiento del catálogo por subcategoría"></div>
             </div>
 
-            <!-- Resultados del Catálogo y Estado de Stock en Tiempo Real (US010) -->
-            <div class="results-panel card">
-                <div class="section-header">
-                    <h2 id="tituloResultados">📦 Catálogo de Productos</h2>
-                    <span id="contadorResultados" class="badge-count">0 artículos</span>
+            <div class="surface-card">
+                <div class="catalog-toolbar">
+                    <div class="toolbar-left">
+                        <h2 id="tituloResultados" class="section-title"
+                            data-scrum="US010 · Visualización de existencias físicas en tiempo real">
+                            📦 Catálogo de Equipos en Tienda
+                        </h2>
+                        <span id="contadorResultados" class="results-counter">0 artículos</span>
+                    </div>
+
+                    <div class="toolbar-controls">
+                        <label class="stock-toggle" data-scrum="US010 / CA024 · Filtrar visualmente artículos con stock físico">
+                            <input type="checkbox" id="chkSoloDisponibles" onchange="aplicarOrdenYFiltroLocal()">
+                            <span>Solo disponibles en tienda</span>
+                        </label>
+
+                        <div class="sort-dropdown-wrapper">
+                            <label for="selectOrdenCatalogo">Ordenar por:</label>
+                            <select id="selectOrdenCatalogo" onchange="aplicarOrdenYFiltroLocal()">
+                                <option value="relevancia">Relevancia en catálogo</option>
+                                <option value="precio_asc">Precio: Menor a Mayor</option>
+                                <option value="precio_desc">Precio: Mayor a Menor</option>
+                                <option value="stock_desc">Mayor disponibilidad de stock</option>
+                                <option value="nombre_asc">Nombre: A - Z</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Mensaje CA003: Búsqueda sin coincidencias -->
-                <div id="alertaSinResultados" class="empty-state hidden">
-                    <h3>⚠️ No se encontraron productos</h3>
-                    <p>No hallamos coincidencias para tu búsqueda. Te sugerimos explorar nuestras categorías generales:</p>
-                    <div id="categoriasSugeridasCA003" class="category-grid"></div>
+                <div id="alertaSinResultados" class="no-results-box hidden"
+                     data-scrum="US001 / CA003 · Manejo de búsqueda sin coincidencias y sugerencia de categorías">
+                    <div class="no-results-icon">⚓</div>
+                    <h3>No se encontraron productos</h3>
+                    <p>No encontramos ningún artículo que coincida con tu criterio. Explora nuestras categorías principales disponibles en tienda:</p>
+                    <div id="categoriasSugeridasCA003" class="categories-showcase compact"></div>
                 </div>
 
-                <!-- Grilla de Tarjetas de Productos -->
-                <div id="grillaProductos" class="product-grid"></div>
+                <div id="grillaProductos" class="products-grid"></div>
             </div>
         </section>
 
-        <!-- =================================================================== -->
-        <!-- VISTA 2: PANEL DE ADMINISTRADOR (US009 y US012)                     -->
-        <!-- =================================================================== -->
         <section id="vistaAdmin" class="view-section hidden">
-            <div class="admin-grid">
-                <!-- US009: Etiquetado Técnico e Indexación IA (CA021, CA022, CA023) -->
-                <div class="card">
-                    <h2>🏷️ Clasificación y Etiquetado Técnico para IA (US009)</h2>
+            <div class="admin-banner">
+                <div>
+                    <span class="nautical-pill">🛠️ MÓDULO DE GESTIÓN INTERNA</span>
+                    <h2 data-scrum="EPIC03 · Conectar, estructurar y clasificar el catálogo para el motor de IA">
+                        Panel de Control de Catálogo, Etiquetado IA y Sincronización de Precios
+                    </h2>
+                    <p>Administra la indexación técnica de los artículos de pesca y verifica la paridad de precios con la caja registradora.</p>
+                </div>
+                <button class="btn btn-sand" onclick="regresarPaginaInicial()">⬅ Volver al Kiosco</button>
+            </div>
 
-                    <!-- CA022: Sugerencia asistida por IA -->
-                    <div class="form-block">
-                        <h3>1. Asistente de Etiquetado Automático por IA (CA022)</h3>
-                        <label for="txtDescripcionIA">Ingresa o pega la descripción técnica de un producto:</label>
+            <div class="admin-panels-grid">
+                <div class="surface-card">
+                    <h3 class="section-title" data-scrum="US009 · Clasificar y etiquetar productos por categorías y atributos técnicos">
+                        🏷️ Clasificación y Etiquetado Técnico para IA
+                    </h3>
+                    <p class="section-subtitle">Estructura los metadatos técnicos para alimentar el buscador y el recomendador inteligente.</p>
+
+                    <div class="admin-form-section">
+                        <h4 data-scrum="US009 / CA022 · Sugerencia automática de etiquetas al registrar descripción">
+                            1. Asistente de Etiquetado Automático por IA
+                        </h4>
+                        <label for="txtDescripcionIA">Descripción técnica del artículo de pesca:</label>
                         <textarea id="txtDescripcionIA" rows="3"
-                                  placeholder="Ej: Caña ligera ideal para pesca de trucha en río bajo modalidad spinning...">Señuelo especial para pesca de corvina y lenguado desde playa en modalidad surfcasting</textarea>
-                        <button class="btn btn-primary" onclick="sugerirEtiquetasIA()">✨ Analizar y Sugerir Etiquetas (CA022)</button>
-                        <div id="resultadoSugerenciasIA" class="tags-container"></div>
+                                  placeholder="Escribe la descripción técnica del producto...">Señuelo especial para pesca de corvina y lenguado desde playa en modalidad surfcasting</textarea>
+                        <button class="btn btn-ocean" onclick="sugerirEtiquetasIA()"
+                                data-scrum="US009 / CA022 · Analizar descripción y sugerir etiquetas normalizadas">
+                            ✨ Analizar Texto y Sugerir Etiquetas
+                        </button>
+                        <div id="resultadoSugerenciasIA" class="tags-cloud"></div>
                     </div>
 
-                    <hr>
+                    <div class="divider"></div>
 
-                    <!-- CA021 y CA023: Asignación manual y actualización de índice -->
-                    <div class="form-block">
-                        <h3>2. Asignar / Actualizar Etiquetas de un Producto en BD (CA021, CA023)</h3>
-                        <div class="form-row">
+                    <div class="admin-form-section">
+                        <h4 data-scrum="US009 / CA021 & CA023 · Asignación manual y actualización de índice en BD">
+                            2. Indexación de Etiquetas por Producto en Base de Datos
+                        </h4>
+                        <div class="form-grid-2">
                             <div>
-                                <label>ID Producto (1 al 10):</label>
-                                <input type="number" id="inputIdProdEtiqueta" value="10" min="1" max="10">
+                                <label for="selectProdEtiqueta">Seleccionar Producto del Catálogo:</label>
+                                <select id="selectProdEtiqueta" onchange="consultarFichaAdmin()">
+                                    <option value="1">ID 1 · Caña Shimano FX Spinning 2.10m</option>
+                                    <option value="2">ID 2 · Caña Okuma Celilo Ultralight 1.80m</option>
+                                    <option value="3">ID 3 · Carrete Shimano Sienna 4000 FG</option>
+                                    <option value="4">ID 4 · Carrete Daiwa Laguna LT 4000</option>
+                                    <option value="5">ID 5 · Línea Trenzada PowerPro 15 lb</option>
+                                    <option value="6">ID 6 · Línea Trenzada Sufix 832 50 lb</option>
+                                    <option value="7">ID 7 · Señuelo Rapala Countdown CD07</option>
+                                    <option value="8">ID 8 · Señuelo Yo-Zuri Crystal Minnow (Agotado)</option>
+                                    <option value="9">ID 9 · Señuelo Shimano Borona Minnow</option>
+                                    <option value="10" selected>ID 10 · Pack Anzuelos Mustad #2</option>
+                                </select>
                             </div>
                             <div>
-                                <label>Etiqueta Técnica a Asignar (CA021):</label>
+                                <label for="selectIdEtiqueta">Etiqueta Técnica Normalizada:</label>
                                 <select id="selectIdEtiqueta">
-                                    <option value="1">1 - Trucha (Especie)</option>
-                                    <option value="2">2 - Corvina (Especie)</option>
-                                    <option value="3">3 - Lenguado (Especie)</option>
-                                    <option value="4">4 - Spinning (Modalidad)</option>
-                                    <option value="5">5 - Surfcasting (Modalidad)</option>
-                                    <option value="6">6 - Agua Dulce / Río (Entorno)</option>
-                                    <option value="7">7 - Mar / Orilla (Entorno)</option>
+                                    <option value="1">Especie: Trucha</option>
+                                    <option value="2">Especie: Corvina</option>
+                                    <option value="3">Especie: Lenguado</option>
+                                    <option value="4">Modalidad: Spinning</option>
+                                    <option value="5">Modalidad: Surfcasting</option>
+                                    <option value="6">Entorno: Agua Dulce / Río</option>
+                                    <option value="7">Entorno: Mar / Orilla</option>
                                 </select>
                             </div>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn btn-primary" onclick="asignarEtiquetaManual()">➕ Asignar e Indexar (CA021)</button>
-                            <button class="btn btn-secondary" onclick="consultarFichaAdmin()">🔍 Ver Etiquetas Actuales</button>
+
+                        <div class="action-buttons-row">
+                            <button class="btn btn-ocean" onclick="asignarEtiquetaManual()"
+                                    data-scrum="US009 / CA021 · Persistir e indexar etiqueta en SQL Server">
+                                ➕ Asignar e Indexar Etiqueta
+                            </button>
+                            <button class="btn btn-outline-teal" onclick="consultarFichaAdmin()"
+                                    data-scrum="US009 / CA023 · Consultar referencias vigentes del producto">
+                                🔄 Ver Etiquetas Indexadas
+                            </button>
                         </div>
-                        <pre id="salidaConsolaEtiquetas" class="json-viewer">Selecciona un producto y asigna una etiqueta para ver la respuesta JSON del servidor...</pre>
+
+                        <pre id="salidaConsolaEtiquetas" class="terminal-box">Selecciona un artículo para inspeccionar sus etiquetas indexadas...</pre>
                     </div>
                 </div>
 
-                <!-- US012: Sincronización de Precios con Caja (CA029, CA030) -->
-                <div class="card">
-                    <h2>💲 Sincronización de Precios y Promociones (US012)</h2>
+                <div class="surface-card">
+                    <h3 class="section-title" data-scrum="US012 · Sincronizar precios y estados de catálogo con la BD central">
+                        💲 Sincronización de Precios y Promociones con Caja
+                    </h3>
+                    <p class="section-subtitle">Garantiza transparencia total entre los importes del kiosco y el punto de cobro.</p>
 
-                    <!-- CA029: Consulta de precio vigente -->
-                    <div class="form-block">
-                        <h3>1. Consultar Precio Sincronizado en Tiempo Real (CA029)</h3>
-                        <div class="form-row">
-                            <input type="number" id="inputIdProdPrecio" value="1" min="1" max="10" placeholder="ID Producto">
-                            <button class="btn btn-primary" onclick="consultarPrecioSincronizado()">🔄 Sincronizar Precio con BD</button>
+                    <div class="admin-form-section">
+                        <h4 data-scrum="US012 / CA029 · Consulta en tiempo real de precios y promociones vigentes">
+                            1. Verificador de Precio Vigente en Base de Datos Central
+                        </h4>
+                        <div class="form-grid-inline">
+                            <select id="selectIdProdPrecio" onchange="consultarPrecioSincronizado()">
+                                <option value="1">ID 1 · Caña Shimano FX Spinning (Con Promoción)</option>
+                                <option value="2">ID 2 · Caña Okuma Celilo Ultralight</option>
+                                <option value="3">ID 3 · Carrete Shimano Sienna 4000 FG</option>
+                                <option value="4">ID 4 · Carrete Daiwa Laguna LT 4000 (Con Promoción)</option>
+                                <option value="7">ID 7 · Señuelo Rapala Countdown CD07</option>
+                                <option value="9">ID 9 · Señuelo Shimano Borona Minnow (Con Promoción)</option>
+                            </select>
+                            <button class="btn btn-ocean" onclick="consultarPrecioSincronizado()"
+                                    data-scrum="US012 / CA029 · Consultar precio fresco sin caché obsoleto">
+                                🔄 Sincronizar Ahora
+                            </button>
                         </div>
-                        <div id="tarjetaPrecioSincronizado" class="price-sync-box"></div>
+                        <div id="tarjetaPrecioSincronizado" class="price-audit-card"></div>
                     </div>
 
-                    <hr>
+                    <div class="divider"></div>
 
-                    <!-- CA030: Verificador de integridad antes de emitir ticket -->
-                    <div class="form-block">
-                        <h3>2. Auditar Integridad de Precios de Lista vs. Caja (CA030)</h3>
-                        <p class="hint">Simula una lista temporal donde el Producto 1 fue capturado a S/ 145.00 (sin promo) y verifica cómo el Backend lo corrige al precio vigente de caja (S/ 129.90):</p>
-                        <button class="btn btn-primary" onclick="verificarIntegridadPreciosLista()">
-                            ✅ Ejecutar Validación de Integridad (CA030)
+                    <div class="admin-form-section">
+                        <h4 data-scrum="US012 / CA030 · Verificación de integridad de precios antes de emitir el ticket">
+                            2. Auditoría de Integridad de Precios en Lista Temporal
+                        </h4>
+                        <p class="helper-text">
+                            Comprueba cómo el sistema detecta precios antiguos en una sesión de cliente y los actualiza automáticamente al valor real de caja registradora:
+                        </p>
+                        <button class="btn btn-ocean" onclick="verificarIntegridadPreciosLista()"
+                                data-scrum="US012 / CA030 · Revalidar lista contra BD central para coincidencia 100% con caja">
+                            ✅ Auditar Precios de Lista contra Caja Central
                         </button>
-                        <pre id="salidaConsolaPrecios" class="json-viewer">Presiona el botón para validar precios contra SQL Server...</pre>
+                        <pre id="salidaConsolaPrecios" class="terminal-box">Presiona el botón para ejecutar la validación contra SQL Server...</pre>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
-    <!-- =================================================================== -->
-    <!-- MODAL: FICHA TÉCNICA COMPLETA Y GALERÍA (US010 y US011: CA024-CA028)-->
-    <!-- =================================================================== -->
-    <div id="modalFicha" class="modal-overlay hidden" onclick="cerrarModalFicha(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <h2 id="modalTituloProducto">Ficha Técnica del Producto</h2>
-                <button class="btn-close" onclick="cerrarModalFicha()">✖</button>
+    <div id="modalFicha" class="modal-backdrop hidden" onclick="cerrarModalFicha(event)">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <span id="modalCategoriaBadge" class="nautical-pill">Categoría</span>
+                    <h2 id="modalTituloProducto" data-scrum="US011 / CA027 · Renderizado completo de ficha técnica e imágenes">
+                        Nombre del Producto
+                    </h2>
+                </div>
+                <button class="modal-close-btn" onclick="cerrarModalFicha()" title="Cerrar ventana">✕</button>
             </div>
-            <div id="modalCuerpoProducto" class="modal-body"></div>
+            <div id="modalCuerpoProducto" class="modal-content-body"></div>
         </div>
     </div>
+
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <div class="footer-brand" onclick="regresarPaginaInicial()" style="cursor:pointer;">
+                    <span>🎣</span>
+                    <strong>COMERCIAL SERNAQUE</strong>
+                </div>
+                <p class="footer-desc">
+                    Tienda de venta de articulos de pesca.
+                </p>
+                <div class="footer-badges">
+                    <span class="footer-badge">📍 MZ. P LT 21 PJ. TUPAC AMARU SECHURA-SECHURA-PIURA</span>
+                    <span class="footer-badge">📞 RUC: 10416589581</span>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h4>🕒 Horarios de Tienda y Almacén</h4>
+                <ul class="footer-list">
+                    <li><strong>Lunes a Viernes:</strong> 08:00 AM – 08:00 PM</li>
+                    <li><strong>Sábados:</strong> 06:30 AM – 09:00 PM</li>
+                    <li><strong>Domingos y Feriados:</strong> 07:00 AM – 02:00 PM</li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>⚓ Especialidades en Tienda</h4>
+                <ul class="footer-list clickable-list">
+                    <li onclick="ejecutarBusquedaPorCategoria(1, 'Cañas de Pesca')">▸ Cañas de Spinning, Casting y Surfcasting</li>
+                    <li onclick="ejecutarBusquedaPorCategoria(2, 'Carretes')">▸ Carretes Frontales y Multiplicadores</li>
+                    <li onclick="ejecutarBusquedaPorCategoria(6, 'Señuelos Agua Dulce')">▸ Señuelos para Río y Lagunas (Trucha)</li>
+                    <li onclick="ejecutarBusquedaPorCategoria(7, 'Señuelos de Mar')">▸ Señuelos de Mar (Corvina y Lenguado)</li>
+                    <li onclick="ejecutarBusquedaPorCategoria(4, 'Líneas y Sedales')">▸ Líneas Trenzadas y Fluorocarbono</li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>💻 Información del Terminal</h4>
+                <div class="kiosk-info-box">
+                    <p><strong>Terminal:</strong> Kiosco Táctil Principal #01</p>
+                    <p><strong>Motor de Datos:</strong> Microsoft SQL Server</p>
+                    <p><strong>Arquitectura:</strong> Monolito Modular en Python</p>
+                    <p class="tooltip-hint">💡 <em>Tip: Mantén el cursor 1.2 s sobre cualquier título o control para ver su código de trazabilidad Scrum.</em></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <span>&copy; 2026 Mar &amp; Río Tackle Pro · Sistema Inteligente de Ayuda para Tienda de Pesca.</span>
+            <a href="javascript:void(0)" onclick="regresarPaginaInicial()">⬆ Volver arriba / Inicio</a>
+        </div>
+    </footer>
+
+    <div id="scrumDelayedTooltip" class="scrum-tooltip hidden"></div>
 
     <script src="{{ url_for('static', filename='js/sprint1.js') }}"></script>
 </body>
