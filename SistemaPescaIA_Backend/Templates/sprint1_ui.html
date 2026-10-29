@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda de Pesca IA - Kiosco & Admin (Sprint 1)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- Barra de Navegación Superior -->
+    <header class="topbar">
+        <div class="brand">
+            <span class="logo-icon">🎣</span>
+            <div>
+                <h1>Sistema Inteligente Tienda de Pesca</h1>
+                <span class="badge-sprint">Incremento Sprint 1 · Monolito Modular</span>
+            </div>
+        </div>
+        <nav class="role-switcher">
+            <button id="btnVistaCliente" class="role-btn active" onclick="cambiarVista('cliente')">
+                🛒 Kiosco Cliente (US001, US002, US010, US011)
+            </button>
+            <button id="btnVistaAdmin" class="role-btn" onclick="cambiarVista('admin')">
+                ⚙️ Panel Administrador (US009, US012)
+            </button>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- =================================================================== -->
+        <!-- VISTA 1: KIOSCO DEL CLIENTE                                         -->
+        <!-- =================================================================== -->
+        <section id="vistaCliente" class="view-section active">
+            <!-- US001: Buscador con Autocompletado (CA001 - CA004) -->
+            <div class="search-panel card">
+                <h2>🔍 Buscar Insumos de Pesca (US001)</h2>
+                <div class="search-bar-wrapper">
+                    <div class="input-group">
+                        <input type="text" id="inputBusqueda"
+                               placeholder="Escribe nombre, marca o código SKU (ej. Shimano, Rapala, SEN-RAP-007)..."
+                               autocomplete="off"
+                               oninput="manejarAutocompletado(this.value)"
+                               onkeydown="if(event.key === 'Enter') ejecutarBusquedaTexto()">
+                        <ul id="listaAutocompletado" class="autocomplete-list hidden"></ul>
+                    </div>
+                    <button class="btn btn-primary" onclick="ejecutarBusquedaTexto()">Buscar (CA001)</button>
+                    <button class="btn btn-secondary" onclick="limpiarBusquedaUI()">Limpiar (CA004)</button>
+                </div>
+                <small class="hint">💡 Escribe al menos 3 caracteres para activar el autocompletado automático (CA002).</small>
+            </div>
+
+            <!-- US002: Navegación por Categorías y Subcategorías (CA005 - CA007) -->
+            <div class="categories-panel card">
+                <div class="section-header">
+                    <h2>📂 Categorías Visuales de Pesca (US002)</h2>
+                    <button id="btnVolverCategorias" class="btn btn-outline hidden" onclick="volverMenuCategoriasUI()">
+                        ⬅ Volver a Categorías Principales (CA007)
+                    </button>
+                </div>
+                <div id="contenedorCategorias" class="category-grid"></div>
+                <div id="contenedorSubcategorias" class="subcategory-bar hidden"></div>
+            </div>
+
+            <!-- Resultados del Catálogo y Estado de Stock en Tiempo Real (US010) -->
+            <div class="results-panel card">
+                <div class="section-header">
+                    <h2 id="tituloResultados">📦 Catálogo de Productos</h2>
+                    <span id="contadorResultados" class="badge-count">0 artículos</span>
+                </div>
+
+                <!-- Mensaje CA003: Búsqueda sin coincidencias -->
+                <div id="alertaSinResultados" class="empty-state hidden">
+                    <h3>⚠️ No se encontraron productos</h3>
+                    <p>No hallamos coincidencias para tu búsqueda. Te sugerimos explorar nuestras categorías generales:</p>
+                    <div id="categoriasSugeridasCA003" class="category-grid"></div>
+                </div>
+
+                <!-- Grilla de Tarjetas de Productos -->
+                <div id="grillaProductos" class="product-grid"></div>
+            </div>
+        </section>
+
+        <!-- =================================================================== -->
+        <!-- VISTA 2: PANEL DE ADMINISTRADOR (US009 y US012)                     -->
+        <!-- =================================================================== -->
+        <section id="vistaAdmin" class="view-section hidden">
+            <div class="admin-grid">
+                <!-- US009: Etiquetado Técnico e Indexación IA (CA021, CA022, CA023) -->
+                <div class="card">
+                    <h2>🏷️ Clasificación y Etiquetado Técnico para IA (US009)</h2>
+
+                    <!-- CA022: Sugerencia asistida por IA -->
+                    <div class="form-block">
+                        <h3>1. Asistente de Etiquetado Automático por IA (CA022)</h3>
+                        <label for="txtDescripcionIA">Ingresa o pega la descripción técnica de un producto:</label>
+                        <textarea id="txtDescripcionIA" rows="3"
+                                  placeholder="Ej: Caña ligera ideal para pesca de trucha en río bajo modalidad spinning...">Señuelo especial para pesca de corvina y lenguado desde playa en modalidad surfcasting</textarea>
+                        <button class="btn btn-primary" onclick="sugerirEtiquetasIA()">✨ Analizar y Sugerir Etiquetas (CA022)</button>
+                        <div id="resultadoSugerenciasIA" class="tags-container"></div>
+                    </div>
+
+                    <hr>
+
+                    <!-- CA021 y CA023: Asignación manual y actualización de índice -->
+                    <div class="form-block">
+                        <h3>2. Asignar / Actualizar Etiquetas de un Producto en BD (CA021, CA023)</h3>
+                        <div class="form-row">
+                            <div>
+                                <label>ID Producto (1 al 10):</label>
+                                <input type="number" id="inputIdProdEtiqueta" value="10" min="1" max="10">
+                            </div>
+                            <div>
+                                <label>Etiqueta Técnica a Asignar (CA021):</label>
+                                <select id="selectIdEtiqueta">
+                                    <option value="1">1 - Trucha (Especie)</option>
+                                    <option value="2">2 - Corvina (Especie)</option>
+                                    <option value="3">3 - Lenguado (Especie)</option>
+                                    <option value="4">4 - Spinning (Modalidad)</option>
+                                    <option value="5">5 - Surfcasting (Modalidad)</option>
+                                    <option value="6">6 - Agua Dulce / Río (Entorno)</option>
+                                    <option value="7">7 - Mar / Orilla (Entorno)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="asignarEtiquetaManual()">➕ Asignar e Indexar (CA021)</button>
+                            <button class="btn btn-secondary" onclick="consultarFichaAdmin()">🔍 Ver Etiquetas Actuales</button>
+                        </div>
+                        <pre id="salidaConsolaEtiquetas" class="json-viewer">Selecciona un producto y asigna una etiqueta para ver la respuesta JSON del servidor...</pre>
+                    </div>
+                </div>
+
+                <!-- US012: Sincronización de Precios con Caja (CA029, CA030) -->
+                <div class="card">
+                    <h2>💲 Sincronización de Precios y Promociones (US012)</h2>
+
+                    <!-- CA029: Consulta de precio vigente -->
+                    <div class="form-block">
+                        <h3>1. Consultar Precio Sincronizado en Tiempo Real (CA029)</h3>
+                        <div class="form-row">
+                            <input type="number" id="inputIdProdPrecio" value="1" min="1" max="10" placeholder="ID Producto">
+                            <button class="btn btn-primary" onclick="consultarPrecioSincronizado()">🔄 Sincronizar Precio con BD</button>
+                        </div>
+                        <div id="tarjetaPrecioSincronizado" class="price-sync-box"></div>
+                    </div>
+
+                    <hr>
+
+                    <!-- CA030: Verificador de integridad antes de emitir ticket -->
+                    <div class="form-block">
+                        <h3>2. Auditar Integridad de Precios de Lista vs. Caja (CA030)</h3>
+                        <p class="hint">Simula una lista temporal donde el Producto 1 fue capturado a S/ 145.00 (sin promo) y verifica cómo el Backend lo corrige al precio vigente de caja (S/ 129.90):</p>
+                        <button class="btn btn-primary" onclick="verificarIntegridadPreciosLista()">
+                            ✅ Ejecutar Validación de Integridad (CA030)
+                        </button>
+                        <pre id="salidaConsolaPrecios" class="json-viewer">Presiona el botón para validar precios contra SQL Server...</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- =================================================================== -->
+    <!-- MODAL: FICHA TÉCNICA COMPLETA Y GALERÍA (US010 y US011: CA024-CA028)-->
+    <!-- =================================================================== -->
+    <div id="modalFicha" class="modal-overlay hidden" onclick="cerrarModalFicha(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modalTituloProducto">Ficha Técnica del Producto</h2>
+                <button class="btn-close" onclick="cerrarModalFicha()">✖</button>
+            </div>
+            <div id="modalCuerpoProducto" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/sprint1.js') }}"></script>
+</body>
+</html>
