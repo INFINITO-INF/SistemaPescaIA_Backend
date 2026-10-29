@@ -1,27 +1,32 @@
-// Estado local para ordenar/filtrar los productos cargados sin perder trazabilidad
 let productosEnPantalla = [];
-let idCategoriaActual = 1;
+let todosLosProductosAuditoria = [];
+let arbolMarcasCatalogo = {};
+let catalogoGlobalEtiquetas = [];
+let catalogoCupones = [];
+let borradorEtiquetasModal = [];
+let productoActualModal = null;
 
-// Iconos temáticos de pesca para cada categoría de la BD
 const ICONOS_CATEGORIA = {
-    1: "🎣", // Cañas de Pesca
-    2: "⚙️", // Carretes
-    3: "🐟", // Señuelos
-    4: "🧵", // Líneas y Sedales
-    5: "🪝", // Accesorios y Anzuelos
-    6: "🏞️", // Señuelos Agua Dulce
-    7: "🌊"  // Señuelos de Mar
+    1: "🎣",
+    2: "⚙️",
+    3: "🐟",
+    4: "🧵",
+    5: "🪝",
+    6: "🏞️",
+    7: "🌊"
 };
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     inicializarTooltipsScrumConRetraso();
     verificarSaludBackend();
-    cargarCategoriasPrincipales(1);
-    ejecutarBusquedaPorCategoria(1, "Cañas de Pesca", true);
+    await recargarCatalogoGlobalEtiquetas();
+    await cargarCategoriasPrincipales(1);
+    await ejecutarBusquedaPorCategoria(1, "Cañas de Pesca", true);
+    await inicializarDatosPanelAdmin();
 });
 
 // =========================================================================
-// 1. SISTEMA DE TOOLTIPS SCRUM CON RETRASO (1.2 SEGUNDOS AL MANTENER MOUSE)
+// 1. TOOLTIPS SCRUM CON RETRASO DE 1.2 SEGUNDOS
 // =========================================================================
 function inicializarTooltipsScrumConRetraso() {
     const tooltip = document.getElementById("scrumDelayedTooltip");
@@ -37,7 +42,6 @@ function inicializarTooltipsScrumConRetraso() {
         ultimoElemento = objetivo;
         clearTimeout(temporizadorHover);
 
-        // Espera 1.2 segundos (1200 ms) antes de mostrar la etiqueta US/CA
         temporizadorHover = setTimeout(() => {
             if (ultimoElemento === objetivo) {
                 const codigoScrum = objetivo.getAttribute("data-scrum");
@@ -52,7 +56,6 @@ function inicializarTooltipsScrumConRetraso() {
     document.addEventListener("mousemove", (e) => {
         mouseX = e.clientX;
         mouseY = e.clientY;
-        // Si el tooltip ya estaba visible y el usuario mueve el mouse, desaparece de inmediato
         if (!tooltip.classList.contains("hidden")) {
             tooltip.classList.add("hidden");
             clearTimeout(temporizadorHover);
@@ -70,10 +73,9 @@ function inicializarTooltipsScrumConRetraso() {
 }
 
 // =========================================================================
-// 2. INTERACCIÓN DEL HEADER: RETORNO A PÁGINA INICIAL Y SALUD DEL BACKEND
+// 2. HEADER: RETORNO AL INICIO E ÍCONO DE ADMINISTRADOR
 // =========================================================================
 async function regresarPaginaInicial() {
-    // Limpia búsqueda en el Backend y restablece la vista principal de Kiosco
     await fetch("/api/v1/busqueda/limpiar", { method: "POST" });
     await fetch("/api/v1/busqueda/categorias/volver", { method: "POST" });
 
@@ -91,6 +93,30 @@ async function regresarPaginaInicial() {
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function alternarPanelAdmin() {
+    const vAdmin = document.getElementById("vistaAdmin");
+    const estaEnAdmin = !vAdmin.classList.contains("hidden");
+    cambiarVista(estaEnAdmin ? "cliente" : "admin");
+}
+
+function cambiarVista(vista) {
+    const vCliente = document.getElementById("vistaCliente");
+    const vAdmin = document.getElementById("vistaAdmin");
+    const btnIcono = document.getElementById("btnIconoAdmin");
+
+    if (vista === "cliente") {
+        vCliente.classList.remove("hidden");
+        vAdmin.classList.add("hidden");
+        btnIcono.classList.remove("active");
+    } else {
+        vCliente.classList.add("hidden");
+        vAdmin.classList.remove("hidden");
+        btnIcono.classList.add("active");
+        cargarDatosAuditoriaYCupones();
+        mostrarResumenEtiquetasProducto();
+    }
+}
+
 async function verificarSaludBackend() {
     try {
         const res = await fetch("/health");
@@ -102,30 +128,36 @@ async function verificarSaludBackend() {
     }
 }
 
-function cambiarVista(vista) {
-    const vCliente = document.getElementById("vistaCliente");
-    const vAdmin = document.getElementById("vistaAdmin");
-    const bCliente = document.getElementById("btnVistaCliente");
-    const bAdmin = document.getElementById("btnVistaAdmin");
+// =========================================================================
+// 3. BÚSQUEDA POR TEXTO, SKU O ETIQUETA TÉCNICA (US001 & US009)
+// =========================================================================
+async function recargarCatalogoGlobalEtiquetas() {
+    const resEtiq = await fetch("/api/v1/catalogo/etiquetas");
+    const dataEtiq = await resEtiq.json();
+    catalogoGlobalEtiquetas = dataEtiq.etiquetas || [];
 
-    if (vista === "cliente") {
-        vCliente.classList.remove("hidden");
-        vAdmin.classList.add("hidden");
-        bCliente.classList.add("active");
-        bAdmin.classList.remove("active");
-    } else {
-        vCliente.classList.add("hidden");
-        vAdmin.classList.remove("hidden");
-        bCliente.classList.remove("active");
-        bAdmin.classList.add("active");
-        consultarPrecioSincronizado();
-        consultarFichaAdmin();
+    // Actualizar menú desplegable de etiquetas en el Header
+    const menuEtiq = document.getElementById("menuDesplegableEtiquetas");
+    if (menuEtiq) {
+        menuEtiq.innerHTML = catalogoGlobalEtiquetas.map(e => `
+            <a href="javascript:void(0)" onclick="buscarTerminoRapido('${e.nombre_etiqueta}')">
+                🏷️ ${e.nombre_etiqueta} <small style="color:#64748b;">(${e.tipo_etiqueta})</small>
+            </a>
+        `).join("");
+    }
+
+    // Actualizar píldoras de etiquetas rápidas bajo el buscador principal
+    const barraHero = document.getElementById("barraEtiquetasRapidasHero");
+    if (barraHero) {
+        barraHero.innerHTML = `<span>🏷️ Buscar por etiqueta:</span>` +
+            catalogoGlobalEtiquetas.map(e => `
+                <button onclick="buscarTerminoRapido('${e.nombre_etiqueta}')">
+                    ${e.nombre_etiqueta}
+                </button>
+            `).join("");
     }
 }
 
-// =========================================================================
-// 3. BÚSQUEDA POR TEXTO, AUTOCOMPLETADO Y LIMPIEZA
-// =========================================================================
 async function manejarAutocompletado(texto) {
     const lista = document.getElementById("listaAutocompletado");
     const q = texto.trim();
@@ -145,14 +177,15 @@ async function manejarAutocompletado(texto) {
     }
 
     lista.innerHTML = data.sugerencias
-        .map(item => `<li data-scrum="US001 / CA002 · Sugerencia automática tras 3 caracteres"
-                          onclick="seleccionarSugerencia('${item.replace(/'/g, "\\'")}')">🔍 ${item}</li>`)
+        .map(item => `<li data-scrum="US001 / CA002 · Sugerencia automática de producto o etiqueta"
+                          onclick="seleccionarSugerencia('${item.replace(/'/g, "\\'")}')">${item}</li>`)
         .join("");
     lista.classList.remove("hidden");
 }
 
 function seleccionarSugerencia(texto) {
-    document.getElementById("inputBusqueda").value = texto;
+    const limpio = texto.replace("🏷️ Etiqueta:", "").trim();
+    document.getElementById("inputBusqueda").value = limpio;
     document.getElementById("listaAutocompletado").classList.add("hidden");
     ejecutarBusquedaTexto();
 }
@@ -165,7 +198,7 @@ function buscarTerminoRapido(termino) {
 
 async function ejecutarBusquedaTexto() {
     const input = document.getElementById("inputBusqueda");
-    const q = input.value.trim();
+    const q = input.value.replace("🏷️ Etiqueta:", "").trim();
     document.getElementById("listaAutocompletado").classList.add("hidden");
 
     if (!q) {
@@ -176,7 +209,7 @@ async function ejecutarBusquedaTexto() {
     const res = await fetch(`/api/v1/busqueda/texto?q=${encodeURIComponent(q)}`);
     const data = await res.json();
 
-    document.getElementById("tituloResultados").textContent = `🔎 Resultados de búsqueda: "${data.termino_buscado}"`;
+    document.getElementById("tituloResultados").textContent = `🔎 Resultados para producto o etiqueta: "${data.termino_buscado}"`;
     document.getElementById("btnVolverCategorias").classList.remove("hidden");
     document.getElementById("contenedorSubcategorias").classList.add("hidden");
 
@@ -188,8 +221,7 @@ async function ejecutarBusquedaTexto() {
         const alerta = document.getElementById("alertaSinResultados");
         alerta.classList.remove("hidden");
 
-        const contSug = document.getElementById("categoriasSugeridasCA003");
-        contSug.innerHTML = data.categorias_sugeridas
+        document.getElementById("categoriasSugeridasCA003").innerHTML = data.categorias_sugeridas
             .map(c => crearBotonCategoriaHTML(c, false))
             .join("");
         return;
@@ -205,7 +237,7 @@ async function limpiarBusquedaUI() {
 }
 
 // =========================================================================
-// 4. NAVEGACIÓN POR CATEGORÍAS Y SUBCATEGORÍAS
+// 4. CATEGORÍAS Y TARJETAS DE PRODUCTOS CON IMAGEN DE GRUPO
 // =========================================================================
 function crearBotonCategoriaHTML(cat, seleccionada) {
     const icono = ICONOS_CATEGORIA[cat.id_categoria] || "🎣";
@@ -227,17 +259,12 @@ async function cargarCategoriasPrincipales(idActiva = null) {
     const data = await res.json();
     const categorias = data.categorias_principales || [];
 
-    // Renderizar tarjetas táctiles en la página
-    const cont = document.getElementById("contenedorCategorias");
-    cont.innerHTML = categorias
+    document.getElementById("contenedorCategorias").innerHTML = categorias
         .map(c => crearBotonCategoriaHTML(c, idActiva === c.id_categoria))
         .join("");
 
-    // Poblar también la barra desplegable del Header
-    const menuHeader = document.getElementById("menuDesplegableCategorias");
-    menuHeader.innerHTML = categorias
+    document.getElementById("menuDesplegableCategorias").innerHTML = categorias
         .map(c => `<a href="javascript:void(0)"
-                      data-scrum="US002 / CA005 · Acceso directo a ${c.nombre}"
                       onclick="cambiarVista('cliente'); ejecutarBusquedaPorCategoria(${c.id_categoria}, '${c.nombre}')">
                       ${ICONOS_CATEGORIA[c.id_categoria] || "🎣"} ${c.nombre}
                    </a>`)
@@ -245,7 +272,6 @@ async function cargarCategoriasPrincipales(idActiva = null) {
 }
 
 async function ejecutarBusquedaPorCategoria(idCategoria, nombreCategoria, esInicio = false) {
-    idCategoriaActual = idCategoria;
     const res = await fetch(`/api/v1/busqueda/categorias/${idCategoria}/productos`);
     const data = await res.json();
 
@@ -256,7 +282,6 @@ async function ejecutarBusquedaPorCategoria(idCategoria, nombreCategoria, esInic
         document.getElementById("btnVolverCategorias").classList.remove("hidden");
     }
 
-    // Marcar visualmente la categoría principal activa si aplica
     if (idCategoria <= 5) {
         cargarCategoriasPrincipales(idCategoria);
     }
@@ -264,7 +289,7 @@ async function ejecutarBusquedaPorCategoria(idCategoria, nombreCategoria, esInic
     const subBar = document.getElementById("contenedorSubcategorias");
     if (data.subcategorias_disponibles && data.subcategorias_disponibles.length > 0) {
         subBar.innerHTML = `
-            <strong>🌊 Filtrar por tipo de agua / subcategoría:</strong>
+            <strong>🌊 Filtrar por subcategoría:</strong>
             ${data.subcategorias_disponibles.map(sub => `
                 <button class="btn btn-outline-teal"
                         data-scrum="US002 / CA006 · Filtro por subcategoría (${sub.nombre})"
@@ -288,9 +313,6 @@ async function volverMenuCategoriasUI() {
     await ejecutarBusquedaPorCategoria(1, "Cañas de Pesca", true);
 }
 
-// =========================================================================
-// 5. ORDENAMIENTO DINÁMICO Y RENDERIZADO DE PRODUCTOS CON STOCK REAL
-// =========================================================================
 function aplicarOrdenYFiltroLocal() {
     const soloDisponibles = document.getElementById("chkSoloDisponibles").checked;
     const criterioOrden = document.getElementById("selectOrdenCatalogo").value;
@@ -320,30 +342,43 @@ function renderizarProductos(productos) {
     document.getElementById("contadorResultados").textContent = `${productos.length} artículo(s)`;
 
     if (productos.length === 0) {
-        grilla.innerHTML = `<p style="color:#64748b; padding:1rem 0;">No hay artículos con stock disponible en esta vista.</p>`;
+        grilla.innerHTML = `<p style="color:#64748b; padding:1rem 0;">No hay artículos disponibles en esta vista.</p>`;
         return;
     }
 
     grilla.innerHTML = productos.map(p => {
-        const precio = (p.precio_vigente !== undefined ? p.precio_vigente : p.precio).toFixed(2);
+        const precioVigente = (p.precio_vigente !== undefined ? p.precio_vigente : p.precio).toFixed(2);
+        const tienePromo = p.en_promocion && p.precio_regular !== undefined;
         const disponible = p.stock_actual > 0;
         const claseStock = disponible ? "stock-verde" : "stock-rojo";
         const textoStock = disponible
             ? `● Disponible en tienda (${p.stock_actual} unid.)`
             : `● Agotado en tienda`;
-        const codigoScrumStock = disponible
-            ? "US010 / CA024 · Indicador verde de producto con stock disponible"
-            : "US010 / CA025 · Indicador rojo de producto agotado y bloqueo de selección";
+
+        const urlImg = p.url_imagen || "/static/img/default_no_image.jpg";
+        const iconoCat = ICONOS_CATEGORIA[p.id_categoria] || "🎣";
 
         return `
             <article class="product-item-card">
                 <div>
+                    <!-- Imagen compartida del Grupo (Marca + Categoría) -->
+                    <div class="product-thumb-container" onclick="abrirFichaTecnica(${p.id_producto})" style="cursor:pointer;">
+                        <img src="${urlImg}" alt="${p.marca} - ${p.nombre}"
+                             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        <div class="thumb-fallback hidden">
+                            <span style="font-size:2.2rem;">${iconoCat}</span>
+                            <strong>Imagen Grupal: ${p.marca}</strong>
+                            <small><code>${urlImg}</code></small>
+                        </div>
+                    </div>
+
                     <div class="product-card-top">
                         <span class="brand-badge">${p.marca}</span>
                         <span class="sku-code">SKU: ${p.sku}</span>
                     </div>
                     <h3 class="product-title">${p.nombre}</h3>
-                    <span class="stock-badge ${claseStock}" data-scrum="${codigoScrumStock}">
+                    <span class="stock-badge ${claseStock}"
+                          data-scrum="${disponible ? 'US010 / CA024 · Producto con stock disponible' : 'US010 / CA025 · Producto agotado'}">
                         ${textoStock}
                     </span>
                 </div>
@@ -351,18 +386,18 @@ function renderizarProductos(productos) {
                 <div>
                     <div class="product-price-row">
                         <span style="font-size:0.8rem; color:#64748b;">Precio vigente caja:</span>
-                        <span class="price-value" data-scrum="US012 / CA029 · Precio sincronizado con caja registradora">
-                            S/ ${precio}
-                        </span>
+                        <div>
+                            ${tienePromo ? `<span class="price-old-strike">S/ ${p.precio_regular.toFixed(2)}</span>` : ""}
+                            <span class="price-value">S/ ${precioVigente}</span>
+                        </div>
                     </div>
                     <div class="card-actions">
                         <button class="btn btn-sand" onclick="abrirFichaTecnica(${p.id_producto})"
-                                data-scrum="US011 / CA027 · Consultar ficha técnica completa y galería">
+                                data-scrum="US011 / CA027 · Consultar ficha técnica e imagen grupal">
                             📋 Ver Ficha
                         </button>
                         <button class="btn btn-ocean" ${!disponible ? "disabled" : ""}
-                                data-scrum="${disponible ? 'US013 · Disponible para agregar a lista de compra' : 'US010 / CA025 · Selección bloqueada por falta de stock'}"
-                                onclick="alert('Artículo válido en inventario. La lista temporal de compra se activa en el módulo pedidos_tickets.')">
+                                onclick="alert('Artículo disponible en inventario.')">
                             ${disponible ? "➕ Seleccionar" : "🚫 Sin Stock"}
                         </button>
                     </div>
@@ -373,7 +408,7 @@ function renderizarProductos(productos) {
 }
 
 // =========================================================================
-// 6. MODAL DE FICHA TÉCNICA COMPLETA Y GALERÍA DE IMÁGENES
+// 5. MODAL DE FICHA TÉCNICA CON VISUALIZACIÓN DE IMAGEN DE GRUPO
 // =========================================================================
 async function abrirFichaTecnica(idProducto) {
     const res = await fetch(`/api/v1/catalogo/productos/${idProducto}/ficha`);
@@ -384,43 +419,58 @@ async function abrirFichaTecnica(idProducto) {
 
     const imgPrincipal = f.galeria_imagenes[0];
     const bannerImagen = imgPrincipal.es_default
-        ? `<div class="stock-badge stock-rojo" style="margin-bottom:0.75rem;"
-                data-scrum="US011 / CA028 · Manejo de producto sin foto secundaria usando imagen genérica">
+        ? `<div class="stock-badge stock-rojo" style="margin-bottom:0.65rem;"
+                data-scrum="US011 / CA028 · Producto sin imagen de grupo ni individual usa imagen por defecto">
                 🖼️ ${imgPrincipal.leyenda}
            </div>`
-        : `<div class="stock-badge stock-verde" style="margin-bottom:0.75rem;"
-                data-scrum="US011 / CA027 · Galería de imágenes en alta resolución (${imgPrincipal.resolucion})">
-                📸 Galería verificada (${f.galeria_imagenes.length} imagen(es) · Resolución ${imgPrincipal.resolucion})
+        : `<div class="stock-badge stock-verde" style="margin-bottom:0.65rem;"
+                data-scrum="US011 / CA027 · Imagen heredada del grupo (${f.marca} - ${f.categoria})">
+                📸 Imagen asociada al grupo: ${f.marca} · ${f.categoria} (${imgPrincipal.resolucion})
            </div>`;
 
     const etiquetasHTML = f.etiquetas && f.etiquetas.length > 0
-        ? f.etiquetas.map(e => `<span class="tag-badge" data-scrum="US009 / CA021 · Etiqueta técnica indexada">${e.nombre_etiqueta} (${e.tipo_etiqueta})</span>`).join("")
-        : `<span style="color:#64748b; font-size:0.85rem;">Sin etiquetas adicionales asociadas</span>`;
+        ? f.etiquetas.map(e => `
+            <span class="tag-badge" style="cursor:pointer;"
+                  onclick="cerrarModalFicha(); buscarTerminoRapido('${e.nombre_etiqueta}')">
+                🏷️ ${e.nombre_etiqueta} (${e.tipo_etiqueta})
+            </span>`).join("")
+        : `<span style="color:#64748b; font-size:0.85rem;">Sin etiquetas técnicas asociadas</span>`;
 
     const tienePromo = f.precio_vigente < f.precio_unitario;
 
     document.getElementById("modalCuerpoProducto").innerHTML = `
         ${bannerImagen}
+
+        <div class="modal-image-showcase">
+            <img src="${imgPrincipal.url_imagen}" alt="${f.nombre}"
+                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+            <div class="thumb-fallback hidden" style="padding:1.5rem;">
+                <span style="font-size:3rem;">${ICONOS_CATEGORIA[f.id_categoria] || "🎣"}</span>
+                <strong>Vista Grupal: ${f.marca} - ${f.categoria}</strong>
+                <small>Coloca tu imagen descargada en: <code>${imgPrincipal.url_imagen}</code></small>
+            </div>
+        </div>
+
         <p style="font-size:0.84rem; color:#475569; margin-bottom:0.65rem;">
-            <strong>Código SKU:</strong> <code>${f.sku}</code> &nbsp;|&nbsp;
-            <strong>Archivo de Imagen:</strong> <code>${imgPrincipal.url_imagen}</code>
+            <strong>Código SKU Único:</strong> <code>${f.sku}</code> &nbsp;|&nbsp;
+            <strong>Ruta en SQL Server:</strong> <code>${imgPrincipal.url_imagen}</code>
         </p>
         <p style="margin-bottom:1rem; line-height:1.5;">${f.descripcion_tecnica}</p>
 
         <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:0.9rem 1rem; border-radius:10px; border:1px solid #dbe3ec;">
-            <div data-scrum="US010 / CA024-CA026 · Estado de inventario consultado en tiempo real">
+            <div>
                 <strong style="display:block; font-size:0.82rem; color:#475569;">DISPONIBILIDAD EN TIENDA:</strong>
                 <span class="stock-badge ${f.inventario.indicador_color === 'verde' ? 'stock-verde' : 'stock-rojo'}">
                     ${f.inventario.leyenda} (${f.inventario.stock_actual} unidades)
                 </span>
             </div>
-            <div style="text-align:right;" data-scrum="US012 / CA029 · Sincronización de precios y descuentos">
+            <div style="text-align:right;">
                 ${tienePromo ? `<small style="text-decoration:line-through; color:#94a3b8;">Regular: S/ ${f.precio_unitario.toFixed(2)}</small><br>` : ""}
                 <span class="price-value">S/ ${f.precio_vigente.toFixed(2)}</span>
             </div>
         </div>
 
-        <h4 style="margin-top:1.2rem; color:#0b2540;">Especificaciones Técnicas del Fabricante:</h4>
+        <h4 style="margin-top:1.2rem; color:#0b2540;">Especificaciones Técnicas:</h4>
         <table class="specs-grid-table">
             <tr><th>Resistencia de Línea</th><td>${f.especificaciones.resistencia_min_lb ?? '-'} lb a ${f.especificaciones.resistencia_max_lb ?? '-'} lb</td></tr>
             <tr><th>Peso del Artículo</th><td>${f.especificaciones.peso_gr ?? '-'} gramos</td></tr>
@@ -428,7 +478,7 @@ async function abrirFichaTecnica(idProducto) {
             <tr><th>Entorno Recomendado</th><td>${f.especificaciones.entorno_recomendado ?? 'General'}</td></tr>
         </table>
 
-        <h4 style="margin-top:1.2rem; color:#0b2540;">Etiquetas Técnicas Indexadas para IA:</h4>
+        <h4 style="margin-top:1.2rem; color:#0b2540;">Etiquetas Técnicas (Haz clic en una para buscar similares):</h4>
         <div class="tags-cloud" style="margin-top:0.45rem;">${etiquetasHTML}</div>
     `;
 
@@ -440,93 +490,438 @@ function cerrarModalFicha() {
 }
 
 // =========================================================================
-// 7. FUNCIONES DEL PANEL ADMINISTRADOR (ETIQUETADO IA Y PRECIOS)
+// 6. PANEL ADMIN: ETIQUETADO IA, CREACIÓN MANUAL Y MODAL FLOTANTE
 // =========================================================================
+async function inicializarDatosPanelAdmin() {
+    await cargarDatosAuditoriaYCupones();
+    await mostrarResumenEtiquetasProducto();
+}
+
 async function sugerirEtiquetasIA() {
-    const descripcion = document.getElementById("txtDescripcionIA").value;
+    const descripcion = document.getElementById("txtDescripcionIA").value.trim();
+    const cont = document.getElementById("resultadoSugerenciasIA");
+
+    if (!descripcion) {
+        cont.innerHTML = `<span style="color:#b91c1c; font-size:0.85rem;">Escribe primero una descripción técnica para analizarla.</span>`;
+        return;
+    }
+
     const res = await fetch("/api/v1/catalogo/etiquetas/sugerir", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ descripcion_tecnica: descripcion })
     });
     const data = await res.json();
-    const cont = document.getElementById("resultadoSugerenciasIA");
 
     if (!data.sugerencias || data.sugerencias.length === 0) {
-        cont.innerHTML = `<span style="color:#64748b; font-size:0.85rem;">No se detectaron términos técnicos conocidos en la descripción.</span>`;
+        cont.innerHTML = `<span style="color:#64748b; font-size:0.85rem;">No se detectaron etiquetas predefinidas.</span>`;
         return;
     }
 
     cont.innerHTML = data.sugerencias
-        .map(s => `<span class="tag-badge" data-scrum="US009 / CA022 · Etiqueta sugerida automáticamente por IA">
-                      ✨ ${s.nombre_etiqueta} (${s.tipo_etiqueta})
-                   </span>`)
+        .map(s => `<span class="tag-badge">✨ ${s.nombre_etiqueta} (${s.tipo_etiqueta})</span>`)
         .join("");
 }
 
-async function asignarEtiquetaManual() {
-    const idProd = document.getElementById("selectProdEtiqueta").value;
-    const idEtiq = document.getElementById("selectIdEtiqueta").value;
+function limpiarAsistenteIA() {
+    document.getElementById("txtDescripcionIA").value = "";
+    document.getElementById("resultadoSugerenciasIA").innerHTML = "";
+}
 
-    const res = await fetch(`/api/v1/catalogo/productos/${idProd}/etiquetas`, {
+async function crearEtiquetaManualUI() {
+    const inputNombre = document.getElementById("inputNuevaEtiquetaNombre");
+    const selectTipo = document.getElementById("selectNuevaEtiquetaTipo");
+    const feedback = document.getElementById("mensajeCreacionEtiqueta");
+
+    const nombre = inputNombre.value.trim();
+    if (!nombre) {
+        feedback.style.color = "#b91c1c";
+        feedback.textContent = "⚠️ Ingresa un nombre para la etiqueta.";
+        return;
+    }
+
+    const res = await fetch("/api/v1/catalogo/etiquetas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id_etiqueta: parseInt(idEtiq) })
+        body: JSON.stringify({
+            nombre_etiqueta: nombre,
+            tipo_etiqueta: selectTipo.value
+        })
     });
     const data = await res.json();
-    document.getElementById("salidaConsolaEtiquetas").textContent = JSON.stringify(data, null, 2);
+
+    await recargarCatalogoGlobalEtiquetas();
+    inputNombre.value = "";
+    feedback.style.color = data.creada ? "#0d9488" : "#0284c7";
+    feedback.textContent = `✔ ${data.mensaje}: "${data.etiqueta.nombre_etiqueta}"`;
 }
 
-async function consultarFichaAdmin() {
+async function mostrarResumenEtiquetasProducto() {
     const idProd = document.getElementById("selectProdEtiqueta").value;
+    if (!idProd) return;
+
     const res = await fetch(`/api/v1/catalogo/productos/${idProd}/ficha`);
-    const data = await res.json();
-    document.getElementById("salidaConsolaEtiquetas").textContent = JSON.stringify({
-        id_producto: data.id_producto,
-        sku: data.sku,
-        nombre: data.nombre,
-        etiquetas_indexadas: data.etiquetas
-    }, null, 2);
+    const ficha = await res.json();
+    productoActualModal = ficha;
+
+    const cont = document.getElementById("vistaPreviaEtiquetasProducto");
+    if (!ficha.etiquetas || ficha.etiquetas.length === 0) {
+        cont.innerHTML = `<span style="color:#64748b; font-size:0.85rem;">Este producto aún no tiene etiquetas técnicas vinculadas.</span>`;
+        return;
+    }
+
+    cont.innerHTML = ficha.etiquetas
+        .map(e => `<span class="tag-badge">${e.nombre_etiqueta} <small>(${e.tipo_etiqueta})</small></span>`)
+        .join("");
 }
 
-async function consultarPrecioSincronizado() {
-    const idProd = document.getElementById("selectIdProdPrecio").value;
-    const res = await fetch(`/api/v1/catalogo/productos/${idProd}/precio`);
-    const data = await res.json();
-    const box = document.getElementById("tarjetaPrecioSincronizado");
+async function abrirModalGestionEtiquetas() {
+    await recargarCatalogoGlobalEtiquetas();
+    await mostrarResumenEtiquetasProducto();
+    if (!productoActualModal) return;
 
-    box.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <div>
-                <strong style="color:#0b2540;">${data.nombre}</strong>
-                <div style="font-size:0.83rem; color:#475569;">
-                    SKU: <code>${data.sku}</code> · Precio Regular: S/ ${data.precio_regular.toFixed(2)}
-                    · Promoción: ${data.en_promocion ? '<strong style="color:#0d9488;">Activa (S/ ' + data.precio_promocion.toFixed(2) + ')</strong>' : 'No aplica'}
-                </div>
-            </div>
-            <div style="text-align:right;">
-                <span style="font-size:0.75rem; color:#475569; display:block;">PRECIO VIGENTE CAJA</span>
-                <strong style="font-size:1.3rem; color:#0284c7;">S/ ${data.precio_vigente_caja.toFixed(2)}</strong>
-            </div>
-        </div>
+    borradorEtiquetasModal = [...(productoActualModal.etiquetas || [])];
+    document.getElementById("tituloModalEtiquetas").textContent = `Etiquetas de: ${productoActualModal.nombre}`;
+    document.getElementById("subtituloModalEtiquetas").textContent =
+        `SKU: ${productoActualModal.sku} · Marca: ${productoActualModal.marca} · Categoría: ${productoActualModal.categoria}`;
+
+    renderizarEditorEtiquetasModal();
+    document.getElementById("modalGestionEtiquetas").classList.remove("hidden");
+}
+
+function renderizarEditorEtiquetasModal() {
+    const cajaChips = document.getElementById("contenedorChipsEditables");
+    const selectorAgregar = document.getElementById("selectAgregarEtiquetaModal");
+
+    if (borradorEtiquetasModal.length === 0) {
+        cajaChips.innerHTML = `<span style="color:#64748b; font-size:0.86rem;">Sin etiquetas vinculadas.</span>`;
+    } else {
+        cajaChips.innerHTML = borradorEtiquetasModal.map(e => `
+            <span class="tag-chip-removable">
+                ${e.nombre_etiqueta} <small>(${e.tipo_etiqueta})</small>
+                <button type="button" title="Desvincular etiqueta"
+                        onclick="quitarEtiquetaDeBorradorModal(${e.id_etiqueta})">✕</button>
+            </span>
+        `).join("");
+    }
+
+    const idsAsignados = new Set(borradorEtiquetasModal.map(e => e.id_etiqueta));
+    const disponibles = catalogoGlobalEtiquetas.filter(e => !idsAsignados.has(e.id_etiqueta));
+
+    selectorAgregar.innerHTML = disponibles.length === 0
+        ? `<option value="">Todas las etiquetas disponibles ya están asignadas</option>`
+        : disponibles.map(e => `<option value="${e.id_etiqueta}">${e.nombre_etiqueta} (${e.tipo_etiqueta})</option>`).join("");
+}
+
+function quitarEtiquetaDeBorradorModal(idEtiqueta) {
+    borradorEtiquetasModal = borradorEtiquetasModal.filter(e => e.id_etiqueta !== idEtiqueta);
+    renderizarEditorEtiquetasModal();
+}
+
+function agregarEtiquetaEnBorradorModal() {
+    const selector = document.getElementById("selectAgregarEtiquetaModal");
+    const idSeleccionado = parseInt(selector.value);
+    if (!idSeleccionado) return;
+
+    const etiquetaObj = catalogoGlobalEtiquetas.find(e => e.id_etiqueta === idSeleccionado);
+    if (etiquetaObj && !borradorEtiquetasModal.some(e => e.id_etiqueta === idSeleccionado)) {
+        borradorEtiquetasModal.push(etiquetaObj);
+        renderizarEditorEtiquetasModal();
+    }
+}
+
+function cerrarModalGestionEtiquetas() {
+    borradorEtiquetasModal = [];
+    document.getElementById("modalGestionEtiquetas").classList.add("hidden");
+}
+
+async function guardarCambiosEtiquetasModal() {
+    if (!productoActualModal) return;
+    const idsEtiquetas = borradorEtiquetasModal.map(e => e.id_etiqueta);
+
+    await fetch(`/api/v1/catalogo/productos/${productoActualModal.id_producto}/etiquetas`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids_etiquetas: idsEtiquetas })
+    });
+
+    document.getElementById("modalGestionEtiquetas").classList.add("hidden");
+    await mostrarResumenEtiquetasProducto();
+}
+
+// =========================================================================
+// 7. AUDITORÍA COMPLETA DE PRODUCTOS, ÁRBOL MARCA->TIPO->SKU Y CUPONES
+// =========================================================================
+async function cargarDatosAuditoriaYCupones() {
+    const [resProd, resCup] = await Promise.all([
+        fetch("/api/v1/catalogo/productos"),
+        fetch("/api/v1/catalogo/cupones")
+    ]);
+
+    const dataProd = await resProd.json();
+    const dataCup = await resCup.json();
+
+    todosLosProductosAuditoria = dataProd.productos || [];
+    arbolMarcasCatalogo = dataProd.arbol_marcas || {};
+    catalogoCupones = dataCup.cupones || [];
+
+    // Poblar selector de productos de la sección de etiquetas si aún está vacío
+    const selProdEtiq = document.getElementById("selectProdEtiqueta");
+    if (selProdEtiq && selProdEtiq.options.length === 0) {
+        selProdEtiq.innerHTML = todosLosProductosAuditoria
+            .map(p => `<option value="${p.id_producto}">${p.sku} · ${p.nombre}</option>`)
+            .join("");
+    }
+
+    // Poblar selector de cupones
+    const selCupon = document.getElementById("selectCuponActivo");
+    selCupon.innerHTML = catalogoCupones.map(c => {
+        const detalleValor = c.tipo_descuento === "PROMO_2X1"
+            ? "2x1 -> Producto a S/ 0.00"
+            : (c.tipo_descuento === "MONTO_FIJO" ? `- S/ ${c.valor_descuento.toFixed(2)}` : `- ${c.valor_descuento}%`);
+        return `<option value="${c.id_cupon}">${c.codigo_cupon} · ${c.nombre_cupon} (${detalleValor})</option>`;
+    }).join("");
+
+    // Poblar selector de Marcas (Ej: Shimano, Okuma, Daiwa...)
+    const selMarca = document.getElementById("selectFiltroMarca");
+    const marcasDisponibles = Object.keys(arbolMarcasCatalogo);
+    const marcaPrevia = selMarca.value;
+    selMarca.innerHTML = marcasDisponibles.map(m => `<option value="${m}">${m}</option>`).join("");
+    if (marcasDisponibles.includes(marcaPrevia)) {
+        selMarca.value = marcaPrevia;
+    }
+
+    actualizarSelectorTiposPorMarca();
+    renderizarTablaGeneralAuditoriaPrecios();
+}
+
+function obtenerCuponSeleccionadoObjeto() {
+    const idCupon = parseInt(document.getElementById("selectCuponActivo").value);
+    return catalogoCupones.find(c => c.id_cupon === idCupon) || null;
+}
+
+function esProductoElegibleParaCuponLocal(producto, cupon) {
+    if (!cupon) return true;
+    if (cupon.tipo_descuento === "PROMO_2X1") return true;
+    if (cupon.tipo_descuento === "MONTO_FIJO") {
+        // Regla estricta: un cupón de S/ 100 solo aplica a productos > S/ 100 (S/ 101 a más).
+        // Productos de S/ 100 o menos quedan en gris (disabled).
+        return producto.precio_unitario > cupon.valor_descuento;
+    }
+    return cupon.valor_descuento > 0 && cupon.valor_descuento < 100;
+}
+
+function actualizarElegibilidadProductosSegunCupon() {
+    const cupon = obtenerCuponSeleccionadoObjeto();
+    const banner = document.getElementById("infoReglaCuponSeleccionado");
+
+    if (cupon) {
+        const reglaTexto = cupon.tipo_descuento === "PROMO_2X1"
+            ? "Promoción 2x1: Permite que el producto seleccionado llegue a S/ 0.00 sin importar su precio base."
+            : (cupon.tipo_descuento === "MONTO_FIJO"
+                ? `Regla de protección activa: Este cupón descuenta S/ ${cupon.valor_descuento.toFixed(2)}, por lo que los productos con precio de S/ ${cupon.valor_descuento.toFixed(2)} o menos aparecerán deshabilitados en gris.`
+                : `Aplica un descuento del ${cupon.valor_descuento}% sobre el precio regular.`);
+
+        banner.innerHTML = `<strong>${cupon.codigo_cupon}:</strong> ${cupon.descripcion_accion}<br><small>${reglaTexto}</small>`;
+    }
+
+    actualizarSelectorSKUsPorMarcaYTipo();
+}
+
+function actualizarSelectorTiposPorMarca() {
+    const marca = document.getElementById("selectFiltroMarca").value;
+    const selTipo = document.getElementById("selectFiltroTipo");
+    const tiposObj = arbolMarcasCatalogo[marca] || {};
+    const tipos = Object.keys(tiposObj);
+
+    selTipo.innerHTML = tipos.map(t => `<option value="${t}">${t} (${tiposObj[t].length} SKU)</option>`).join("");
+    actualizarElegibilidadProductosSegunCupon();
+}
+
+function actualizarSelectorSKUsPorMarcaYTipo() {
+    const marca = document.getElementById("selectFiltroMarca").value;
+    const tipo = document.getElementById("selectFiltroTipo").value;
+    const selSKU = document.getElementById("selectSKUIndividual");
+    const cupon = obtenerCuponSeleccionadoObjeto();
+
+    const listaSKUs = (arbolMarcasCatalogo[marca] && arbolMarcasCatalogo[marca][tipo]) || [];
+
+    selSKU.innerHTML = listaSKUs.map(p => {
+        const elegible = esProductoElegibleParaCuponLocal(p, cupon);
+        const notaNoElegible = !elegible
+            ? ` 🚫 [No aplicable: cuesta S/ ${p.precio_unitario.toFixed(2)} ≤ S/ ${cupon.valor_descuento.toFixed(2)}]`
+            : "";
+        return `
+            <option value="${p.id_producto}" ${!elegible ? "disabled" : ""}>
+                ${p.sku} · ${p.nombre} — Precio Base: S/ ${p.precio_unitario.toFixed(2)}${notaNoElegible}
+            </option>
+        `;
+    }).join("");
+}
+
+async function aplicarCuponSeleccionadoAlSKU() {
+    const idProd = parseInt(document.getElementById("selectSKUIndividual").value);
+    const cupon = obtenerCuponSeleccionadoObjeto();
+    const feedback = document.getElementById("mensajeResultadoCupon");
+
+    if (!idProd || !cupon) {
+        feedback.style.color = "#b91c1c";
+        feedback.textContent = "⚠️ Selecciona un SKU elegible (que no esté en gris) y un cupón válido.";
+        return;
+    }
+
+    const res = await fetch(`/api/v1/catalogo/productos/${idProd}/cupon`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_cupon: cupon.id_cupon })
+    });
+    const data = await res.json();
+
+    feedback.style.color = data.aplicado ? "#0d9488" : "#b91c1c";
+    feedback.textContent = (data.aplicado ? "✔ " : "⚠️ ") + data.mensaje;
+
+    await cargarDatosAuditoriaYCupones();
+}
+
+async function quitarCuponDeSKUSeleccionado() {
+    const idProd = parseInt(document.getElementById("selectSKUIndividual").value);
+    const feedback = document.getElementById("mensajeResultadoCupon");
+    if (!idProd) return;
+
+    const res = await fetch(`/api/v1/catalogo/productos/${idProd}/cupon`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id_cupon: null })
+    });
+    const data = await res.json();
+
+    feedback.style.color = "#0284c7";
+    feedback.textContent = `✔ ${data.mensaje}`;
+    await cargarDatosAuditoriaYCupones();
+}
+
+function seleccionarProductoEnArbolDesdeTabla(idProducto, marca, categoria) {
+    document.getElementById("selectFiltroMarca").value = marca;
+    actualizarSelectorTiposPorMarca();
+    document.getElementById("selectFiltroTipo").value = categoria;
+    actualizarSelectorSKUsPorMarcaYTipo();
+    document.getElementById("selectSKUIndividual").value = idProducto;
+    window.scrollTo({ top: 120, behavior: "smooth" });
+}
+
+function renderizarTablaGeneralAuditoriaPrecios() {
+    const contenedor = document.getElementById("contenedorTablaAuditoriaPrecios");
+
+    const filasHTML = todosLosProductosAuditoria.map(p => {
+        const stockBadge = p.stock_actual > 0
+            ? `<span class="stock-badge stock-verde">${p.stock_actual} unid.</span>`
+            : `<span class="stock-badge stock-rojo">Agotado (0)</span>`;
+
+        const celdaPromocional = p.precio_promocion !== null
+            ? `<strong style="color:#0d9488;">S/ ${p.precio_promocion.toFixed(2)}</strong>`
+            : `<span style="color:#94a3b8;">— Sin promo —</span>`;
+
+        const celdaCupon = p.codigo_cupon
+            ? `<span class="tag-badge">🎟️ ${p.codigo_cupon}</span>`
+            : `<span style="color:#94a3b8; font-size:0.82rem;">Ninguno</span>`;
+
+        return `
+            <tr>
+                <td><code>${p.sku}</code></td>
+                <td><strong>${p.nombre}</strong></td>
+                <td><span class="brand-badge">${p.marca}</span> <small>${p.categoria}</small></td>
+                <td style="text-align:center;">${stockBadge}</td>
+                <td>S/ ${p.precio_unitario.toFixed(2)}</td>
+                <td>${celdaPromocional}</td>
+                <td>${celdaCupon}</td>
+                <td style="text-align:right;"><strong style="color:#0284c7;">S/ ${p.precio_vigente_caja.toFixed(2)}</strong></td>
+                <td style="text-align:center;">
+                    <button class="btn btn-sand" style="padding:0.35rem 0.65rem; font-size:0.78rem;"
+                            onclick="seleccionarProductoEnArbolDesdeTabla(${p.id_producto}, '${p.marca}', '${p.categoria}')">
+                        🎯 Seleccionar SKU
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join("");
+
+    contenedor.innerHTML = `
+        <table class="audit-prices-table" data-scrum="US012 / CA029 & CA030 · Tabla completa de productos con SKU, stock, precio actual y precio promocional">
+            <thead>
+                <tr>
+                    <th>SKU Único</th>
+                    <th>Nombre del Producto</th>
+                    <th>Marca / Subproducto</th>
+                    <th style="text-align:center;">Stock</th>
+                    <th>Precio Actual</th>
+                    <th>Precio Promocional</th>
+                    <th>Cupón Activo</th>
+                    <th style="text-align:right;">Cobro en Caja</th>
+                    <th style="text-align:center;">Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${filasHTML}
+            </tbody>
+        </table>
     `;
 }
 
-async function verificarIntegridadPreciosLista() {
-    const payload = {
-        items: [
-            { id_producto: 1, cantidad: 2, precio_capturado: 145.00 },
-            { id_producto: 3, cantidad: 1, precio_capturado: 165.00 }
-        ]
-    };
+// --- VENTANA FLOTANTE PARA CREAR NUEVO CUPÓN ---
+function abrirModalCrearCupon() {
+    document.getElementById("inputCuponNombre").value = "";
+    document.getElementById("inputCuponCodigo").value = "";
+    document.getElementById("inputCuponDescripcion").value = "";
+    document.getElementById("selectCuponTipo").value = "MONTO_FIJO";
+    document.getElementById("inputCuponValor").value = "50";
+    document.getElementById("inputCuponValor").disabled = false;
+    document.getElementById("modalCrearCupon").classList.remove("hidden");
+}
 
-    const res = await fetch("/api/v1/catalogo/precios/verificar-lista", {
+function cerrarModalCrearCupon() {
+    document.getElementById("modalCrearCupon").classList.add("hidden");
+}
+
+function ajustarInputValorSegunTipoCupon() {
+    const tipo = document.getElementById("selectCuponTipo").value;
+    const inputValor = document.getElementById("inputCuponValor");
+    if (tipo === "PROMO_2X1") {
+        inputValor.value = "100";
+        inputValor.disabled = true;
+    } else {
+        inputValor.disabled = false;
+    }
+}
+
+async function guardarNuevoCuponModal() {
+    const nombre = document.getElementById("inputCuponNombre").value.trim();
+    const codigo = document.getElementById("inputCuponCodigo").value.trim();
+    const descripcion = document.getElementById("inputCuponDescripcion").value.trim();
+    const tipo = document.getElementById("selectCuponTipo").value;
+    const valor = parseFloat(document.getElementById("inputCuponValor").value || "0");
+
+    const res = await fetch("/api/v1/catalogo/cupones", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+            nombre_cupon: nombre,
+            codigo_cupon: codigo,
+            descripcion_accion: descripcion,
+            tipo_descuento: tipo,
+            valor_descuento: valor
+        })
     });
     const data = await res.json();
-    document.getElementById("salidaConsolaPrecios").textContent = JSON.stringify(data, null, 2);
+
+    if (!data.creado) {
+        alert(data.mensaje);
+        return;
+    }
+
+    cerrarModalCrearCupon();
+    await cargarDatosAuditoriaYCupones();
+    document.getElementById("selectCuponActivo").value = data.cupon.id_cupon;
+    actualizarElegibilidadProductosSegunCupon();
 }
 
 // SIG // Begin signature block

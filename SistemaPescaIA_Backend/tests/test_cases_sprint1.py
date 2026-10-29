@@ -180,3 +180,38 @@ def test_cp_int_03_busqueda_sql_por_marca_y_sku(busqueda_service):
     assert len(por_marca["resultados"]) >= 3
     assert por_sku["tuvo_resultados"] is True
     assert por_sku["resultados"][0]["nombre"] == "Señuelo Rapala Countdown CD07 Trucha"
+
+@pytest.mark.unit
+def test_cp_unit_07_regla_cupon_100_bloquea_menores_o_iguales_a_100():
+    """Verifica que un cupón fijo de S/ 100 bloquee productos de S/ 100 o menos y acepte de S/ 101 a más."""
+    bloqueado_100 = CatalogoInventarioService.evaluar_elegibilidad_cupon(100.00, "MONTO_FIJO", 100.00)
+    bloqueado_95 = CatalogoInventarioService.evaluar_elegibilidad_cupon(95.00, "MONTO_FIJO", 100.00)
+    permitido_101 = CatalogoInventarioService.evaluar_elegibilidad_cupon(101.00, "MONTO_FIJO", 100.00)
+
+    assert bloqueado_100["elegible"] is False
+    assert bloqueado_95["elegible"] is False
+    assert permitido_101["elegible"] is True
+    assert permitido_101["nuevo_precio_promocion"] == 1.00
+
+@pytest.mark.unit
+def test_cp_unit_08_regla_cupon_2x1_permite_llegar_a_cero():
+    """Verifica que un cupón PROMO_2X1 permita que un producto de S/ 100 llegue a S/ 0.00."""
+    promo_2x1 = CatalogoInventarioService.evaluar_elegibilidad_cupon(100.00, "PROMO_2X1", 100.00)
+    assert promo_2x1["elegible"] is True
+    assert promo_2x1["nuevo_precio_promocion"] == 0.00
+
+@pytest.mark.integration
+def test_cp_int_04_busqueda_directa_por_etiqueta_tecnica(busqueda_service):
+    """Verifica que al buscar el nombre de una etiqueta ('Surfcasting'), retorne los productos etiquetados."""
+    res = busqueda_service.buscar_por_texto("Surfcasting")
+    assert res["tuvo_resultados"] is True
+    skus = [p["sku"] for p in res["resultados"]]
+    assert "SEN-SHI-009" in skus
+
+@pytest.mark.integration
+def test_cp_int_05_herencia_imagen_por_grupo_marca_y_categoria(catalogo_service):
+    """Verifica que dos cañas Shimano con SKUs distintos compartan la imagen del grupo Shimano + Cañas."""
+    ficha_cana_1 = catalogo_service.obtener_ficha_tecnica_y_galeria(1)
+    ficha_cana_11 = catalogo_service.obtener_ficha_tecnica_y_galeria(11)
+    assert ficha_cana_1["galeria_imagenes"][0]["url_imagen"] == "/static/img/grupos/shimano_canas.jpg"
+    assert ficha_cana_11["galeria_imagenes"][0]["url_imagen"] == "/static/img/grupos/shimano_canas.jpg"

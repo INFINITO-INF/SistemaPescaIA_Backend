@@ -1027,3 +1027,257 @@ body {
 .hidden {
     display: none !important;
 }
+
+/* ========================================================================= */
+/* NUEVOS ESTILOS: ÍCONO ADMIN EN ESQUINA DERECHA, MODAL DE CHIPS Y TABLA    */
+/* ========================================================================= */
+.header-left-group {
+    display: flex;
+    align-items: center;
+    gap: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.header-admin-corner {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+.admin-icon-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .admin-icon-btn:hover,
+    .admin-icon-btn.active {
+        background: var(--teal-accent);
+        color: #fff;
+        border-color: #5eead4;
+        transform: rotate(25deg);
+    }
+
+.product-tags-preview-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+}
+
+.preview-label {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-bottom: 0.45rem;
+    text-transform: uppercase;
+}
+
+.inline-feedback {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--teal-accent);
+    align-self: center;
+}
+
+/* Editor de Chips en Ventana Emergente (Modal Etiquetas) */
+.editor-label {
+    display: block;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: var(--navy-header);
+    margin-bottom: 0.5rem;
+}
+
+.editable-tags-box {
+    min-height: 76px;
+    background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 0.85rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+    align-items: center;
+}
+
+.tag-chip-removable {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #7dd3fc;
+    padding: 0.35rem 0.75rem;
+    border-radius: 99px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+    .tag-chip-removable button {
+        background: rgba(3, 105, 161, 0.14);
+        color: #0369a1;
+        border: none;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        font-size: 0.75rem;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: 0.15s;
+    }
+
+        .tag-chip-removable button:hover {
+            background: var(--stock-out);
+            color: #fff;
+        }
+
+.modal-footer-actions {
+    margin-top: 1.6rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* Tabla Interactiva de Auditoría de Precios */
+.audit-table-wrapper {
+    margin-top: 0.5rem;
+    overflow-x: auto;
+}
+
+.empty-table-msg {
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 8px;
+    padding: 1rem;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    text-align: center;
+}
+
+.audit-prices-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+    .audit-prices-table th {
+        background: var(--navy-header);
+        color: #fff;
+        padding: 0.65rem 0.75rem;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .audit-prices-table td {
+        padding: 0.65rem 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+        background: #fff;
+    }
+
+    .audit-prices-table tfoot td {
+        background: #f0f9ff;
+        font-weight: 800;
+        color: var(--navy-header);
+        font-size: 0.95rem;
+    }
+
+.price-old-strike {
+    text-decoration: line-through;
+    color: var(--stock-out);
+    font-size: 0.8rem;
+    margin-right: 0.35rem;
+}
+
+/* ========================================================================= */
+/* ESTILOS PARA IMÁGENES GRUPALES, SELECTOR MARCA->TIPO->SKU Y CUPONES       */
+/* ========================================================================= */
+.form-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 0.75rem;
+}
+
+.coupon-rule-banner {
+    background: #f0fdfa;
+    border: 1px solid #99f6e4;
+    border-left: 4px solid var(--teal-accent);
+    padding: 0.65rem 0.9rem;
+    border-radius: 8px;
+    font-size: 0.84rem;
+    color: #0f766e;
+}
+
+select option:disabled {
+    color: #94a3b8 !important;
+    background-color: #f1f5f9 !important;
+    font-style: italic;
+}
+
+.product-thumb-container {
+    width: 100%;
+    height: 155px;
+    background: #f8fafc;
+    border-radius: 9px;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    margin-bottom: 0.55rem;
+    position: relative;
+}
+
+    .product-thumb-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.thumb-fallback {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #64748b;
+    font-size: 0.78rem;
+    padding: 0.5rem;
+    text-align: center;
+}
+
+.modal-image-showcase {
+    width: 100%;
+    max-height: 250px;
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.modal-image-showcase img {
+    max-width: 100%;
+    max-height: 240px;
+    object-fit: contain;
+
+}

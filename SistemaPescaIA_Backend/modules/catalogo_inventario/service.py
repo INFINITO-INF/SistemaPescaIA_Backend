@@ -2,7 +2,7 @@ from config.settings import Settings
 from modules.catalogo_inventario.repository import CatalogoRepository
 
 class CatalogoInventarioService:
-    """Lógica de negocio de Catálogo e Inventario (US009, US010, US011, US012)."""
+    """Lógica de negocio de Catálogo, Etiquetas, Imágenes Grupales y Cupones Modulares."""
 
     REGLAS_ETIQUETADO_IA = {
         "trucha": {"id_etiqueta": 1, "nombre_etiqueta": "Trucha", "tipo_etiqueta": "Especie"},
@@ -19,12 +19,156 @@ class CatalogoInventarioService:
     def __init__(self, repo: CatalogoRepository = None):
         self.repo = repo or CatalogoRepository()
 
+    def listar_resumen_productos(self) -> list[dict]:
+        """Retorna la tabla completa de productos reales en inventario con su estado de precios."""
+        return self.repo.obtener_todos_los_productos_auditoria()
+
+    def obtener_arbol_marca_categoria_productos(self) -> dict:
+        """
+        Organiza los productos jerárquicamente por:
+        Marca (ej. Shimano) -> Tipo/Categoría (ej. Cañas de Pesca) -> Lista de SKUs individuales.
+        """
+        productos = self.repo.obtener_todos_los_productos_auditoria()
+        arbol = {}
+        for p in productos:
+            marca = p["marca"]
+            categoria = p["categoria"]
+            arbol.setdefault(marca, {}).setdefault(categoria, []).append(p)
+        return arbol
+
     # =========================================================================
-    # US009: Clasificar y etiquetar productos por categorías y atributos (CA021-CA023)
+    # GESTIÓN MODULAR DE CUPONES Y REGLAS DE ELEGIBILIDAD
     # =========================================================================
+    def listar_cupones_disponibles(self) -> list[dict]:
+        return self.repo.listar_cupones()
+
+    def crear_nuevo_cupon(self, codigo: str, nombre: str, descripcion: str, tipo: str, valor: float) -> dict:
+        codigo_limpio = (codigo or "").strip().upper()
+        nombre_limpio = (nombre or "").strip()
+        desc_limpia = (descripcion or "").strip()
+        tipo_limpio = (tipo or "MONTO_FIJO").strip().upper()
+
+        if not codigo_limpio or not nombre_limpio or not desc_limpia:
+            return {"creado": False, "mensaje": "Nombre, código y descripción de lo que hace el cupón son obligatorios."}
+        if tipo_limpio not in ("MONTO_FIJO", "PORCENTAJE", "PROMO_2X1"):
+            return {"creado": False, "mensaje": "Tipo de cupón no válido."}
+        if float(valor) < 0:
+            return {"creado": False, "mensaje": "El valor del descuento no puede ser negativo."}
+
+        return self.repo.crear_cupon(codigo_limpio, nombre_limpio, desc_limpia, tipo_limpio, float(valor))
+
+    @staticmethod
+    def evaluar_elegibilidad_cupon(precio_unitario: float, tipo_descuento: str, valor_descuento: float) -> dict:
+        """
+        Regla de negocio modular (100% Unit-Testable):
+        - Si es PROMO_2X1: Permite que el producto llegue a S/ 0.00 (ej. producto de S/ 100 pasa a S/ 0.00).
+        - Si es MONTO_FIJO: El descuento NO puede ser mayor ni igual al precio regular del producto
+          (ej. un cupón de S/ 100 solo aplica a productos > S/ 100, es decir de S/ 101 o más;
+           productos de S/ 100 o menos quedan bloqueados en gris).
+        - Si es PORCENTAJE: Permite hasta 99% en descuento normal, o 100% solo si es modalidad 2x1.
+        """
+        precio = float(precio_unitario)
+        valor = float(valor_descuento)
+
+        if tipo_descuento == "PROMO_2X1":
+            return {
+                "elegible": True,
+                "nuevo_precio_promocion": 0.00,
+                "motivo": "Promoción 2x1 aplicada (unidad bonificada a S/ 0.00)",
+            }
+
+        if tipo_descuento == "MONTO_FIJO":
+            if precio <= valor:
+                return {
+                    "elegible": False,
+                    "nuevo_precio_promocion": None,
+                    "motivo": (
+                        f"Bloqueado: El producto cuesta S/ {precio:.2f} y el cupón descuenta S/ {valor:.2f}. "
+                        f"Requiere un precio mayor a S/ {valor:.2f}."
+                    ),
+                }
+            return {
+                "elegible": True,
+                "nuevo_precio_promocion": round(precio - valor, 2),
+                "motivo": "Cupón de monto fijo aplicable",
+            }
+
+        if tipo_descuento == "PORCENTAJE":
+            if valor <= 0 or valor >= 100:
+                return {
+                    "elegible": False,
+                    "nuevo_precio_promocion": None,
+                    "motivo": "El porcentaje debe ser menor al 100% (para llegar a S/ 0.00 use PROMO_2X1).",
+                }
+            nuevo = round(precio * (1.0 - (valor / 100.0)), 2)
+            return {
+                "elegible": True,
+                "nuevo_precio_promocion": nuevo,
+                "motivo": f"Descuento del {valor:.0f}% aplicable",
+            }
+
+        return {"elegible": False, "nuevo_precio_promocion": None, "motivo": "Tipo de cupón desconocido"}
+
+    def aplicar_cupon_a_producto(self, id_producto: int, id_cupon: int | None) -> dict:
+        """Aplica o remueve un cupón sobre un SKU individual validando las reglas de negocio."""
+        prod = self.repo.obtener_precios_producto(id_producto)
+        if not prod:
+            return {"aplicado": False, "mensaje": "Producto no encontrado"}
+
+        # Si id_cupon es None o 0, removemos el cupón y restauramos su precio regular
+        if not id_cupon:
+            self.repo.guardar_cupon_en_producto(id_producto, None, None)
+            return {
+                "aplicado": True,
+                "id_producto": id_producto,
+                "sku": prod.sku,
+                "precio_regular": float(prod.precio_unitario),
+                "precio_promocion": None,
+                "mensaje": "Cupón removido; producto restaurado a su precio regular.",
+            }
+
+        cupon = self.repo.obtener_cupon_por_id(id_cupon)
+        if not cupon:
+            return {"aplicado": False, "mensaje": "El cupón seleccionado no existe"}
+
+        evaluacion = self.evaluar_elegibilidad_cupon(
+            float(prod.precio_unitario), cupon.tipo_descuento, float(cupon.valor_descuento)
+        )
+        if not evaluacion["elegible"]:
+            return {
+                "aplicado": False,
+                "id_producto": id_producto,
+                "sku": prod.sku,
+                "mensaje": evaluacion["motivo"],
+            }
+
+        nuevo_precio = evaluacion["nuevo_precio_promocion"]
+        self.repo.guardar_cupon_en_producto(id_producto, cupon.id_cupon, nuevo_precio)
+        return {
+            "aplicado": True,
+            "id_producto": id_producto,
+            "sku": prod.sku,
+            "codigo_cupon": cupon.codigo_cupon,
+            "precio_regular": float(prod.precio_unitario),
+            "precio_promocion": nuevo_precio,
+            "mensaje": f"Cupón {cupon.codigo_cupon} aplicado a {prod.sku}. Nuevo precio: S/ {nuevo_precio:.2f}",
+        }
+
+    # =========================================================================
+    # US009: Clasificar y etiquetar productos (CA021-CA023)
+    # =========================================================================
+    def listar_todas_las_etiquetas(self) -> list[dict]:
+        return self.repo.obtener_catalogo_etiquetas()
+
+    def crear_etiqueta_tecnica(self, nombre_etiqueta: str, tipo_etiqueta: str) -> dict:
+        nombre = (nombre_etiqueta or "").strip()
+        tipo = (tipo_etiqueta or "General").strip()
+        if not nombre:
+            return {"creada": False, "mensaje": "El nombre de la etiqueta es obligatorio"}
+        return self.repo.crear_nueva_etiqueta(nombre, tipo)
+
     @classmethod
     def sugerir_etiquetas_ia(cls, descripcion_tecnica: str) -> list[dict]:
-        """CA022: Sugiere automáticamente etiquetas técnicas analizando el texto."""
         if not descripcion_tecnica or not descripcion_tecnica.strip():
             return []
         texto = descripcion_tecnica.lower()
@@ -37,7 +181,6 @@ class CatalogoInventarioService:
         return sugeridas
 
     def asignar_etiqueta_manual(self, id_producto: int, id_etiqueta: int) -> dict:
-        """CA021: Asigna e indexa una etiqueta técnica en la BD."""
         exito = self.repo.vincular_etiqueta_producto(id_producto, id_etiqueta)
         if not exito:
             return {"indexado": False, "mensaje": "Producto o etiqueta no válidos"}
@@ -49,7 +192,6 @@ class CatalogoInventarioService:
         }
 
     def actualizar_etiquetas_producto(self, id_producto: int, ids_etiquetas: list[int]) -> dict:
-        """CA023: Actualiza referencias de etiquetas para el recomendador de IA sin reiniciar."""
         exito = self.repo.reemplazar_etiquetas_producto(id_producto, ids_etiquetas)
         if not exito:
             return {"actualizado": False, "mensaje": "Producto no encontrado"}
@@ -61,11 +203,10 @@ class CatalogoInventarioService:
         }
 
     # =========================================================================
-    # US010: Consultar disponibilidad en inventario en tiempo real (CA024-CA026)
+    # US010: Disponibilidad de inventario en tiempo real (CA024-CA026)
     # =========================================================================
     @staticmethod
     def evaluar_regla_stock(stock_actual: int) -> dict:
-        """CA024 y CA025: Evalúa el estado de inventario y bloqueo de pedido."""
         if stock_actual > 0:
             return {
                 "stock_actual": stock_actual,
@@ -81,7 +222,6 @@ class CatalogoInventarioService:
         }
 
     def consultar_disponibilidad_tiempo_real(self, id_producto: int) -> dict | None:
-        """CA024, CA025 y CA026: Consulta stock en tiempo real directamente de la BD."""
         fila = self.repo.obtener_stock_producto(id_producto)
         if not fila:
             return None
@@ -94,33 +234,25 @@ class CatalogoInventarioService:
         }
 
     # =========================================================================
-    # US011: Visualizar ficha técnica detallada y galería de imágenes (CA027-CA028)
+    # US011: Ficha técnica detallada e imágenes por Grupo (Marca + Categoría)
     # =========================================================================
     def obtener_ficha_tecnica_y_galeria(self, id_producto: int) -> dict | None:
-        """CA027 y CA028: Renderiza datos técnicos e imágenes o asigna imagen por defecto."""
         prod = self.repo.obtener_detalle_producto(id_producto)
         if not prod:
             return None
 
-        filas_img = self.repo.obtener_imagenes_producto(id_producto)
-        if filas_img:
-            galeria = [
-                {
-                    "url_imagen": img.url_imagen,
-                    "es_principal": bool(img.es_principal),
-                    "resolucion": img.resolucion,
-                    "es_default": False,
-                }
-                for img in filas_img
-            ]
-        else:
-            # CA028: Imagen genérica estandarizada cuando no hay fotos en BD
+        galeria = self.repo.obtener_imagenes_por_grupo_y_producto(
+            prod.id_producto, prod.marca, prod.id_categoria
+        )
+        if not galeria:
+            # CA028: Cuando ni el grupo ni el producto tienen imagen (ej. Producto 10 Mustad)
             galeria = [
                 {
                     "url_imagen": Settings.DEFAULT_IMAGE_URL,
                     "es_principal": True,
                     "resolucion": "1920x1080",
                     "leyenda": "Imagen referencial no disponible",
+                    "origen": "Por Defecto",
                     "es_default": True,
                 }
             ]
@@ -136,6 +268,7 @@ class CatalogoInventarioService:
             "sku": prod.sku,
             "nombre": prod.nombre,
             "marca": prod.marca,
+            "id_categoria": prod.id_categoria,
             "categoria": prod.categoria,
             "precio_unitario": float(prod.precio_unitario),
             "precio_vigente": precio_vigente,
@@ -154,11 +287,10 @@ class CatalogoInventarioService:
         }
 
     # =========================================================================
-    # US012: Sincronizar precios y estados de catálogo con BD central (CA029-CA030)
+    # US012: Sincronización de precios con BD central (CA029-CA030)
     # =========================================================================
     @staticmethod
     def calcular_precio_vigente(precio_unitario: float, precio_promocion: float | None) -> dict:
-        """Lógica pura para determinar precio de cobro en caja."""
         en_promo = precio_promocion is not None and precio_promocion < precio_unitario
         precio_final = float(precio_promocion) if en_promo else float(precio_unitario)
         return {
@@ -169,7 +301,6 @@ class CatalogoInventarioService:
         }
 
     def consultar_precio_sincronizado(self, id_producto: int) -> dict | None:
-        """CA029: Consulta precio actualizado directo de la BD sin caché."""
         fila = self.repo.obtener_precios_producto(id_producto)
         if not fila:
             return None
@@ -182,7 +313,6 @@ class CatalogoInventarioService:
         }
 
     def verificar_integridad_precios_lista(self, items_lista: list[dict]) -> dict:
-        """CA030: Valida los precios de una lista temporal contra la BD central antes del ticket."""
         items_verificados = []
         subtotal_sincronizado = 0.0
         hubo_ajustes = False
@@ -197,7 +327,8 @@ class CatalogoInventarioService:
                 continue
 
             precio_real_caja = datos_bd["precio_vigente_caja"]
-            if round(precio_en_sesion, 2) != round(precio_real_caja, 2):
+            actualizado = round(precio_en_sesion, 2) != round(precio_real_caja, 2)
+            if actualizado:
                 hubo_ajustes = True
 
             subtotal_linea = round(precio_real_caja * cantidad, 2)
@@ -206,10 +337,14 @@ class CatalogoInventarioService:
             items_verificados.append({
                 "id_producto": id_prod,
                 "sku": datos_bd["sku"],
+                "nombre": datos_bd["nombre"],
                 "cantidad": cantidad,
                 "precio_anterior": precio_en_sesion,
+                "precio_regular_bd": datos_bd["precio_regular"],
+                "en_promocion": datos_bd["en_promocion"],
                 "precio_sincronizado_caja": precio_real_caja,
                 "subtotal_linea": subtotal_linea,
+                "fue_ajustado": actualizado,
             })
 
         return {

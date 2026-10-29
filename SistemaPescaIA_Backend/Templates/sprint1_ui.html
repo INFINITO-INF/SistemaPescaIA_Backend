@@ -8,72 +8,65 @@
 </head>
 <body>
     <!-- =================================================================== -->
-    <!-- HEADER PRINCIPAL                                                    -->
+    <!-- HEADER PRINCIPAL CON ÍCONO DISCRETO DE ADMINISTRADOR A LA DERECHA   -->
     <!-- =================================================================== -->
     <header class="main-header">
         <div class="header-container">
-            <a href="javascript:void(0)" class="brand-logo" onclick="regresarPaginaInicial()"
-               data-scrum="Retorno a Pantalla Principal del Kiosco (US001 / CA004 & CA007)">
-                <div class="logo-emblem">🎣</div>
-                <div class="brand-text">
-                    <span class="brand-title">COMERCIAL SERNAQUE</strong></span>
-                    <span class="brand-subtitle">Tienda de Aryiculos de Pesca &amp; Sistema Interactivo</span>
-                </div>
-            </a>
-
-            <nav class="header-nav">
-                <div class="nav-dropdown">
-                    <button class="nav-dropbtn" data-scrum="US002 · Navegación rápida por categorías del catálogo">
-                        🧭 Explorar Equipos <span class="caret">▾</span>
-                    </button>
-                    <div class="nav-dropdown-content" id="menuDesplegableCategorias">
+            <div class="header-left-group">
+                <a href="javascript:void(0)" class="brand-logo" onclick="regresarPaginaInicial()"
+                   data-scrum="Retorno a Pantalla Principal del Kiosco (US001 / CA004 & CA007)">
+                    <div class="logo-emblem">🎣</div>
+                    <div class="brand-text">
+                        <span class="brand-title"><strong>COMERCIAL SERNAQUE</strong></span>
+                        <span class="brand-subtitle">Tienda de Pesca &amp; Sistema de Tienda</span>
                     </div>
-                </div>
+                </a>
 
-                <div class="nav-dropdown">
-                    <button class="nav-dropbtn" data-scrum="US009 · Clasificación por entornos y modalidades técnicas">
-                        🌊 Entornos de Pesca <span class="caret">▾</span>
-                    </button>
-                    <div class="nav-dropdown-content">
-                        <a href="javascript:void(0)" onclick="buscarTerminoRapido('Shimano')">🏖️ Pesca de Orilla (Surfcasting)</a>
-                        <a href="javascript:void(0)" onclick="buscarTerminoRapido('Trucha')">🏞️ Ríos y Lagunas Andinas</a>
-                        <a href="javascript:void(0)" onclick="buscarTerminoRapido('Sufix')">🚤 Pesca de Embarcación</a>
-                        <div class="dropdown-divider"></div>
-                        <a href="javascript:void(0)" onclick="ejecutarBusquedaPorCategoria(3, 'Señuelos')">🐟 Todos los Señuelos</a>
+                <nav class="header-nav">
+                    <div class="nav-dropdown">
+                        <button class="nav-dropbtn" data-scrum="US002 · Navegación rápida por categorías del catálogo">
+                            🧭 Explorar Equipos <span class="caret">▾</span>
+                        </button>
+                        <div class="nav-dropdown-content" id="menuDesplegableCategorias"></div>
                     </div>
-                </div>
 
-                <div class="nav-dropdown">
-                    <button class="nav-dropbtn" data-scrum="EPIC03 · Estado de conexión con SQL Server en tiempo real">
-                        📡 Estado en Tienda <span class="caret">▾</span>
-                    </button>
-                    <div class="nav-dropdown-content status-dropdown">
-                        <div class="status-item">
-                            <span class="dot-online"></span>
-                            <div>
-                                <strong>Inventario en Tiempo Real</strong>
-                                <small>Sincronizado con Caja Central</small>
+                    <div class="nav-dropdown">
+                        <button class="nav-dropbtn" data-scrum="US001 & US009 · Búsqueda rápida por etiquetas técnicas indexadas">
+                            🏷️ Buscar por Etiqueta <span class="caret">▾</span>
+                        </button>
+                        <div class="nav-dropdown-content" id="menuDesplegableEtiquetas"></div>
+                    </div>
+
+                    <div class="nav-dropdown">
+                        <button class="nav-dropbtn" data-scrum="EPIC03 · Estado de conexión con SQL Server en tiempo real">
+                            📡 Estado en Tienda <span class="caret">▾</span>
+                        </button>
+                        <div class="nav-dropdown-content status-dropdown">
+                            <div class="status-item">
+                                <span class="dot-online"></span>
+                                <div>
+                                    <strong>Inventario en Tiempo Real</strong>
+                                    <small>Sincronizado con Caja Central</small>
+                                </div>
                             </div>
-                        </div>
-                        <div class="status-item">
-                            <span>🤖</span>
-                            <div>
-                                <strong>Motor IA de Clasificación</strong>
-                                <small id="estadoSaludBackend">Verificando conexión...</small>
+                            <div class="status-item">
+                                <span>🤖</span>
+                                <div>
+                                    <strong>Motor IA de Clasificación</strong>
+                                    <small id="estadoSaludBackend">Verificando conexión...</small>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            </nav>
+                </nav>
+            </div>
 
-            <div class="mode-switcher">
-                <button id="btnVistaCliente" class="mode-btn active" onclick="cambiarVista('cliente')"
-                        data-scrum="Vista del Rol Cliente (EPIC01 y EPIC03: US001, US002, US010, US011)">
-                    🛒 Kiosco deTienda
-                </button>
-                <button id="btnVistaAdmin" class="mode-btn" onclick="cambiarVista('admin')"
-                        data-scrum="Vista del Rol Administrador (EPIC03: US009 y US012)">
-                    ⚙️ Gestión Catálogo
+            <!-- Esquina Derecha: Solo Ícono para Acceso de Administrador -->
+            <div class="header-admin-corner">
+                <button id="btnIconoAdmin" class="admin-icon-btn" onclick="alternarPanelAdmin()"
+                        aria-label="Gestión de Catálogo"
+                        data-scrum="Acceso exclusivo Administrador: Gestión de Catálogo, Etiquetas y Cupones (EPIC03: US009 y US012)">
+                    ⚙️
                 </button>
             </div>
         </div>
@@ -84,31 +77,35 @@
     <!-- =================================================================== -->
     <main class="main-container">
 
+        <!-- =============================================================== -->
+        <!-- VISTA 1: KIOSCO INTERACTIVO PARA CLIENTES                       -->
+        <!-- =============================================================== -->
         <section id="vistaCliente" class="view-section">
 
+            <!-- Hero / Buscador por Nombre, Marca, SKU o Etiqueta -->
             <div class="hero-search-banner">
                 <div class="hero-content">
-                    <span class="nautical-pill" data-scrum="EPIC01 · Búsqueda e Identificación Inteligente">
+                    <span class="nautical-pill" data-scrum="EPIC01 · Búsqueda por Texto, SKU o Etiqueta Técnica">
                         ⚓ ASISTENTE DE INVENTARIO EN TIENDA
                     </span>
-                    <h1 data-scrum="US001 · Buscar productos ingresando texto por nombre, código o marca">
+                    <h1 data-scrum="US001 · Buscar productos ingresando nombre, código, marca o etiqueta técnica">
                         Encuentra el equipo exacto para tu próxima captura
                     </h1>
-                    <p>Consulta existencias físicas al instante, explora especificaciones técnicas o navega por categorías.</p>
+                    <p>Busca por nombre, marca, código SKU o directamente por una <strong>etiqueta técnica</strong> (ej. <em>Surfcasting, Trucha, Corvina, Spinning</em>).</p>
 
                     <div class="search-box-container">
                         <div class="search-input-wrapper">
                             <span class="search-icon">🔍</span>
                             <input type="text" id="inputBusqueda"
-                                   placeholder="Buscar cañas, carretes, señuelos, marca o código SKU (ej. Shimano, Rapala, SEN-RAP-007)..."
+                                   placeholder="Escribe producto, marca, SKU o etiqueta (ej. Surfcasting, Trucha, Shimano, SEN-RAP-007)..."
                                    autocomplete="off"
-                                   data-scrum="US001 / CA001 & CA002 · Entrada de texto con autocompletado tras 3 caracteres"
+                                   data-scrum="US001 / CA001 & CA002 · Búsqueda directa por texto o etiqueta con autocompletado tras 3 caracteres"
                                    oninput="manejarAutocompletado(this.value)"
                                    onkeydown="if(event.key === 'Enter') ejecutarBusquedaTexto()">
                             <ul id="listaAutocompletado" class="autocomplete-dropdown hidden"></ul>
                         </div>
                         <button class="btn btn-ocean" onclick="ejecutarBusquedaTexto()"
-                                data-scrum="US001 / CA001 · Ejecutar búsqueda directa por coincidencias">
+                                data-scrum="US001 / CA001 · Ejecutar búsqueda por producto o etiqueta">
                             Buscar Equipo
                         </button>
                         <button class="btn btn-sand" onclick="limpiarBusquedaUI()"
@@ -117,16 +114,14 @@
                         </button>
                     </div>
 
-                    <div class="quick-search-tags">
-                        <span>Búsquedas frecuentes:</span>
-                        <button onclick="buscarTerminoRapido('Shimano')" data-scrum="US001 · Búsqueda rápida por marca">Shimano</button>
-                        <button onclick="buscarTerminoRapido('Rapala')" data-scrum="US001 · Búsqueda rápida por marca">Rapala</button>
-                        <button onclick="buscarTerminoRapido('PowerPro')" data-scrum="US001 · Búsqueda rápida de líneas">Línea PowerPro</button>
-                        <button onclick="buscarTerminoRapido('Yo-Zuri')" data-scrum="US010 / CA025 · Ejemplo de artículo agotado">Yo-Zuri (Ver Agotado)</button>
+                    <!-- Barra de Etiquetas Rápidas Clickeables -->
+                    <div class="quick-search-tags" id="barraEtiquetasRapidasHero"
+                         data-scrum="US001 & US009 · Búsqueda instantánea haciendo clic en cualquier etiqueta técnica">
                     </div>
                 </div>
             </div>
 
+            <!-- Panel de Categorías Visuales -->
             <div class="surface-card">
                 <div class="card-header-bar">
                     <div>
@@ -142,11 +137,11 @@
                 </div>
 
                 <div id="contenedorCategorias" class="categories-showcase"></div>
-
                 <div id="contenedorSubcategorias" class="subcategories-strip hidden"
                      data-scrum="US002 / CA006 · Refinamiento del catálogo por subcategoría"></div>
             </div>
 
+            <!-- Panel de Resultados del Catálogo -->
             <div class="surface-card">
                 <div class="catalog-toolbar">
                     <div class="toolbar-left">
@@ -180,7 +175,7 @@
                      data-scrum="US001 / CA003 · Manejo de búsqueda sin coincidencias y sugerencia de categorías">
                     <div class="no-results-icon">⚓</div>
                     <h3>No se encontraron productos</h3>
-                    <p>No encontramos ningún artículo que coincida con tu criterio. Explora nuestras categorías principales disponibles en tienda:</p>
+                    <p>No encontramos ningún artículo o etiqueta que coincida con tu búsqueda. Explora nuestras categorías principales:</p>
                     <div id="categoriasSugeridasCA003" class="categories-showcase compact"></div>
                 </div>
 
@@ -188,143 +183,179 @@
             </div>
         </section>
 
+        <!-- =============================================================== -->
+        <!-- VISTA 2: PANEL DE ADMINISTRACIÓN DEL CATÁLOGO, ETIQUETAS Y CUPONES -->
+        <!-- =============================================================== -->
         <section id="vistaAdmin" class="view-section hidden">
             <div class="admin-banner">
                 <div>
                     <span class="nautical-pill">🛠️ MÓDULO DE GESTIÓN INTERNA</span>
                     <h2 data-scrum="EPIC03 · Conectar, estructurar y clasificar el catálogo para el motor de IA">
-                        Panel de Control de Catálogo, Etiquetado IA y Sincronización de Precios
+                        Gestión de Catálogo, Etiquetado Técnico y Auditoría de Precios / Cupones
                     </h2>
-                    <p>Administra la indexación técnica de los artículos de pesca y verifica la paridad de precios con la caja registradora.</p>
+                    <p>Administra las etiquetas indexadas para búsqueda rápida y gestiona los precios promocionales por SKU mediante cupones modulares.</p>
                 </div>
                 <button class="btn btn-sand" onclick="regresarPaginaInicial()">⬅ Volver al Kiosco</button>
             </div>
 
             <div class="admin-panels-grid">
+                <!-- Columna 1: Clasificación y Etiquetado Técnico -->
                 <div class="surface-card">
                     <h3 class="section-title" data-scrum="US009 · Clasificar y etiquetar productos por categorías y atributos técnicos">
                         🏷️ Clasificación y Etiquetado Técnico para IA
                     </h3>
-                    <p class="section-subtitle">Estructura los metadatos técnicos para alimentar el buscador y el recomendador inteligente.</p>
+                    <p class="section-subtitle">Las etiquetas que agregues aquí permiten encontrar productos instantáneamente desde el buscador del kiosco.</p>
 
                     <div class="admin-form-section">
                         <h4 data-scrum="US009 / CA022 · Sugerencia automática de etiquetas al registrar descripción">
-                            1. Asistente de Etiquetado Automático por IA
+                            1. Asistente de Etiquetado por IA (Experimental / Pre-API)
                         </h4>
-                        <label for="txtDescripcionIA">Descripción técnica del artículo de pesca:</label>
-                        <textarea id="txtDescripcionIA" rows="3"
-                                  placeholder="Escribe la descripción técnica del producto...">Señuelo especial para pesca de corvina y lenguado desde playa en modalidad surfcasting</textarea>
-                        <button class="btn btn-ocean" onclick="sugerirEtiquetasIA()"
-                                data-scrum="US009 / CA022 · Analizar descripción y sugerir etiquetas normalizadas">
-                            ✨ Analizar Texto y Sugerir Etiquetas
-                        </button>
+                        <label for="txtDescripcionIA">Ingresa la descripción técnica de un artículo para detectar etiquetas:</label>
+                        <textarea id="txtDescripcionIA" rows="2"
+                                  placeholder="Escribe aquí la descripción técnica del producto (ej. Caña ligera para trucha en río modalidad spinning)..."></textarea>
+                        <div class="action-buttons-row">
+                            <button class="btn btn-ocean" onclick="sugerirEtiquetasIA()"
+                                    data-scrum="US009 / CA022 · Analizar descripción y sugerir etiquetas normalizadas">
+                                ✨ Analizar Texto con IA
+                            </button>
+                            <button class="btn btn-sand" onclick="limpiarAsistenteIA()">Limpiar</button>
+                        </div>
                         <div id="resultadoSugerenciasIA" class="tags-cloud"></div>
                     </div>
 
                     <div class="divider"></div>
 
                     <div class="admin-form-section">
-                        <h4 data-scrum="US009 / CA021 & CA023 · Asignación manual y actualización de índice en BD">
-                            2. Indexación de Etiquetas por Producto en Base de Datos
+                        <h4 data-scrum="US009 / CA021 · Creación manual de nuevas etiquetas técnicas en el catálogo">
+                            2. Crear Nueva Etiqueta Técnica Manualmente
                         </h4>
                         <div class="form-grid-2">
                             <div>
-                                <label for="selectProdEtiqueta">Seleccionar Producto del Catálogo:</label>
-                                <select id="selectProdEtiqueta" onchange="consultarFichaAdmin()">
-                                    <option value="1">ID 1 · Caña Shimano FX Spinning 2.10m</option>
-                                    <option value="2">ID 2 · Caña Okuma Celilo Ultralight 1.80m</option>
-                                    <option value="3">ID 3 · Carrete Shimano Sienna 4000 FG</option>
-                                    <option value="4">ID 4 · Carrete Daiwa Laguna LT 4000</option>
-                                    <option value="5">ID 5 · Línea Trenzada PowerPro 15 lb</option>
-                                    <option value="6">ID 6 · Línea Trenzada Sufix 832 50 lb</option>
-                                    <option value="7">ID 7 · Señuelo Rapala Countdown CD07</option>
-                                    <option value="8">ID 8 · Señuelo Yo-Zuri Crystal Minnow (Agotado)</option>
-                                    <option value="9">ID 9 · Señuelo Shimano Borona Minnow</option>
-                                    <option value="10" selected>ID 10 · Pack Anzuelos Mustad #2</option>
-                                </select>
+                                <label for="inputNuevaEtiquetaNombre">Nombre de la Etiqueta:</label>
+                                <input type="text" id="inputNuevaEtiquetaNombre" placeholder="Ej. Róbalo, Jigging, Alta Mar...">
                             </div>
                             <div>
-                                <label for="selectIdEtiqueta">Etiqueta Técnica Normalizada:</label>
-                                <select id="selectIdEtiqueta">
-                                    <option value="1">Especie: Trucha</option>
-                                    <option value="2">Especie: Corvina</option>
-                                    <option value="3">Especie: Lenguado</option>
-                                    <option value="4">Modalidad: Spinning</option>
-                                    <option value="5">Modalidad: Surfcasting</option>
-                                    <option value="6">Entorno: Agua Dulce / Río</option>
-                                    <option value="7">Entorno: Mar / Orilla</option>
+                                <label for="selectNuevaEtiquetaTipo">Categoría / Tipo:</label>
+                                <select id="selectNuevaEtiquetaTipo">
+                                    <option value="Especie">Especie Objetivo</option>
+                                    <option value="Modalidad">Modalidad de Pesca</option>
+                                    <option value="Entorno">Entorno / Agua</option>
+                                    <option value="Material">Material / Acción</option>
                                 </select>
                             </div>
                         </div>
-
                         <div class="action-buttons-row">
-                            <button class="btn btn-ocean" onclick="asignarEtiquetaManual()"
-                                    data-scrum="US009 / CA021 · Persistir e indexar etiqueta en SQL Server">
-                                ➕ Asignar e Indexar Etiqueta
+                            <button class="btn btn-outline-teal" onclick="crearEtiquetaManualUI()"
+                                    data-scrum="US009 / CA021 · Guardar nueva etiqueta en la base de datos">
+                                ➕ Registrar Etiqueta en Catálogo
                             </button>
-                            <button class="btn btn-outline-teal" onclick="consultarFichaAdmin()"
-                                    data-scrum="US009 / CA023 · Consultar referencias vigentes del producto">
-                                🔄 Ver Etiquetas Indexadas
-                            </button>
+                            <span id="mensajeCreacionEtiqueta" class="inline-feedback"></span>
                         </div>
-
-                        <pre id="salidaConsolaEtiquetas" class="terminal-box">Selecciona un artículo para inspeccionar sus etiquetas indexadas...</pre>
-                    </div>
-                </div>
-
-                <div class="surface-card">
-                    <h3 class="section-title" data-scrum="US012 · Sincronizar precios y estados de catálogo con la BD central">
-                        💲 Sincronización de Precios y Promociones con Caja
-                    </h3>
-                    <p class="section-subtitle">Garantiza transparencia total entre los importes del kiosco y el punto de cobro.</p>
-
-                    <div class="admin-form-section">
-                        <h4 data-scrum="US012 / CA029 · Consulta en tiempo real de precios y promociones vigentes">
-                            1. Verificador de Precio Vigente en Base de Datos Central
-                        </h4>
-                        <div class="form-grid-inline">
-                            <select id="selectIdProdPrecio" onchange="consultarPrecioSincronizado()">
-                                <option value="1">ID 1 · Caña Shimano FX Spinning (Con Promoción)</option>
-                                <option value="2">ID 2 · Caña Okuma Celilo Ultralight</option>
-                                <option value="3">ID 3 · Carrete Shimano Sienna 4000 FG</option>
-                                <option value="4">ID 4 · Carrete Daiwa Laguna LT 4000 (Con Promoción)</option>
-                                <option value="7">ID 7 · Señuelo Rapala Countdown CD07</option>
-                                <option value="9">ID 9 · Señuelo Shimano Borona Minnow (Con Promoción)</option>
-                            </select>
-                            <button class="btn btn-ocean" onclick="consultarPrecioSincronizado()"
-                                    data-scrum="US012 / CA029 · Consultar precio fresco sin caché obsoleto">
-                                🔄 Sincronizar Ahora
-                            </button>
-                        </div>
-                        <div id="tarjetaPrecioSincronizado" class="price-audit-card"></div>
                     </div>
 
                     <div class="divider"></div>
 
                     <div class="admin-form-section">
-                        <h4 data-scrum="US012 / CA030 · Verificación de integridad de precios antes de emitir el ticket">
-                            2. Auditoría de Integridad de Precios en Lista Temporal
+                        <h4 data-scrum="US009 / CA021 & CA023 · Administración interactiva de etiquetas por producto">
+                            3. Administrar Etiquetas Indexadas por Producto
                         </h4>
-                        <p class="helper-text">
-                            Comprueba cómo el sistema detecta precios antiguos en una sesión de cliente y los actualiza automáticamente al valor real de caja registradora:
-                        </p>
-                        <button class="btn btn-ocean" onclick="verificarIntegridadPreciosLista()"
-                                data-scrum="US012 / CA030 · Revalidar lista contra BD central para coincidencia 100% con caja">
-                            ✅ Auditar Precios de Lista contra Caja Central
+                        <label for="selectProdEtiqueta">Selecciona un producto del catálogo:</label>
+                        <select id="selectProdEtiqueta" onchange="mostrarResumenEtiquetasProducto()"></select>
+
+                        <div class="product-tags-preview-box">
+                            <span class="preview-label">Etiquetas actualmente vinculadas:</span>
+                            <div id="vistaPreviaEtiquetasProducto" class="tags-cloud"></div>
+                        </div>
+
+                        <button class="btn btn-ocean" onclick="abrirModalGestionEtiquetas()"
+                                data-scrum="US009 / CA021 & CA023 · Abrir ventana flotante para vincular o desvincular etiquetas">
+                            🗂️ Administrar Etiquetas en Ventana Flotante
                         </button>
-                        <pre id="salidaConsolaPrecios" class="terminal-box">Presiona el botón para ejecutar la validación contra SQL Server...</pre>
                     </div>
                 </div>
+
+                <!-- Columna 2: Gestión de Cupones y Selección Jerárquica por Marca -> Tipo -> SKU -->
+                <div class="surface-card">
+                    <div class="card-header-bar" style="margin-bottom:0.5rem;">
+                        <div>
+                            <h3 class="section-title" data-scrum="US012 · Sincronizar precios y gestionar descuentos modulares">
+                                🎟️ Gestión Modular de Cupones y Descuentos por SKU
+                            </h3>
+                            <p class="section-subtitle">Selecciona un cupón y aplícalo organizadamente por Marca, Tipo de Producto y SKU individual.</p>
+                        </div>
+                        <button class="btn btn-ocean" onclick="abrirModalCrearCupon()"
+                                data-scrum="US012 · Abrir ventana flotante para crear un nuevo cupón de descuento">
+                            ➕ Crear Nuevo Cupón
+                        </button>
+                    </div>
+
+                    <div class="admin-form-section">
+                        <h4>1. Elegir Cupón a Aplicar</h4>
+                        <label for="selectCuponActivo">Selecciona un cupón del catálogo (filtra automáticamente qué productos son elegibles):</label>
+                        <select id="selectCuponActivo" onchange="actualizarElegibilidadProductosSegunCupon()"></select>
+                        <div id="infoReglaCuponSeleccionado" class="coupon-rule-banner"></div>
+                    </div>
+
+                    <div class="admin-form-section">
+                        <h4>2. Seleccionar Producto por Marca, Tipo y SKU Individual</h4>
+                        <div class="form-grid-3">
+                            <div>
+                                <label for="selectFiltroMarca">Marca:</label>
+                                <select id="selectFiltroMarca" onchange="actualizarSelectorTiposPorMarca()"></select>
+                            </div>
+                            <div>
+                                <label for="selectFiltroTipo">Subproducto / Tipo:</label>
+                                <select id="selectFiltroTipo" onchange="actualizarSelectorSKUsPorMarcaYTipo()"></select>
+                            </div>
+                            <div>
+                                <label for="selectSKUIndividual">Producto (SKU Individual):</label>
+                                <select id="selectSKUIndividual"></select>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons-row" style="margin-top:0.5rem;">
+                            <button class="btn btn-ocean" onclick="aplicarCuponSeleccionadoAlSKU()"
+                                    data-scrum="US012 / CA029 · Aplicar cupón validando que el descuento no supere el precio">
+                                ✅ Aplicar Cupón al SKU Seleccionado
+                            </button>
+                            <button class="btn btn-sand" onclick="quitarCuponDeSKUSeleccionado()"
+                                    data-scrum="US012 · Remover cupón y restaurar precio regular en BD">
+                                🔄 Quitar Cupón (Restaurar Precio Regular)
+                            </button>
+                        </div>
+                        <div id="mensajeResultadoCupon" class="inline-feedback"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla Completa de Auditoría de Precios de TODOS los Productos en Inventario -->
+            <div class="surface-card">
+                <div class="card-header-bar">
+                    <div>
+                        <h3 class="section-title" data-scrum="US012 / CA029 & CA030 · Auditoría en tiempo real de todos los productos del catálogo">
+                            📊 Tabla General de Auditoría de Precios e Inventario en BD Central
+                        </h3>
+                        <p class="section-subtitle">Visualiza todos los productos registrados con su SKU único, stock disponible, precio regular, precio promocional y cupón activo.</p>
+                    </div>
+                    <button class="btn btn-outline-teal" onclick="cargarDatosAuditoriaYCupones()">
+                        🔄 Refrescar Tabla con SQL Server
+                    </button>
+                </div>
+
+                <div id="contenedorTablaAuditoriaPrecios" class="audit-table-wrapper"></div>
             </div>
         </section>
     </main>
 
-    <div id="modalFicha" class="modal-backdrop hidden" onclick="cerrarModalFicha(event)">
+    <!-- =================================================================== -->
+    <!-- MODAL 1: FICHA TÉCNICA DETALLADA E IMAGEN DEL GRUPO (CLIENTE)       -->
+    <!-- =================================================================== -->
+    <div id="modalFicha" class="modal-backdrop hidden" onclick="cerrarModalFicha()">
         <div class="modal-dialog" onclick="event.stopPropagation()">
             <div class="modal-top">
                 <div>
                     <span id="modalCategoriaBadge" class="nautical-pill">Categoría</span>
-                    <h2 id="modalTituloProducto" data-scrum="US011 / CA027 · Renderizado completo de ficha técnica e imágenes">
+                    <h2 id="modalTituloProducto" data-scrum="US011 / CA027 · Renderizado completo de ficha técnica e imagen grupal">
                         Nombre del Producto
                     </h2>
                 </div>
@@ -334,6 +365,111 @@
         </div>
     </div>
 
+    <!-- =================================================================== -->
+    <!-- MODAL 2: ADMINISTRADOR INTERACTIVO DE ETIQUETAS DEL PRODUCTO (US009)-->
+    <!-- =================================================================== -->
+    <div id="modalGestionEtiquetas" class="modal-backdrop hidden" onclick="cerrarModalGestionEtiquetas()">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <span class="nautical-pill">🏷️ GESTIÓN DE ÍNDICE IA</span>
+                    <h2 id="tituloModalEtiquetas">Administrar Etiquetas del Producto</h2>
+                </div>
+                <button class="modal-close-btn" onclick="cerrarModalGestionEtiquetas()" title="Cerrar sin guardar">✕</button>
+            </div>
+
+            <div class="modal-content-body">
+                <p id="subtituloModalEtiquetas" style="color:#475569; margin-bottom:1rem; font-size:0.92rem;"></p>
+
+                <div class="tag-editor-section">
+                    <label class="editor-label">Etiquetas asignadas al producto (haz clic en <strong>✕</strong> para desvincular):</label>
+                    <div id="contenedorChipsEditables" class="editable-tags-box"></div>
+                </div>
+
+                <div class="tag-editor-section" style="margin-top:1.25rem;">
+                    <label class="editor-label">Vincular una etiqueta técnica existente:</label>
+                    <div class="form-grid-inline">
+                        <select id="selectAgregarEtiquetaModal"></select>
+                        <button class="btn btn-outline-teal" onclick="agregarEtiquetaEnBorradorModal()">
+                            ➕ Añadir a la lista
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-footer-actions">
+                    <button class="btn btn-sand" onclick="cerrarModalGestionEtiquetas()">
+                        Descartar / No Guardar
+                    </button>
+                    <button class="btn btn-ocean" onclick="guardarCambiosEtiquetasModal()">
+                        💾 Guardar Cambios en Base de Datos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- MODAL 3: CREAR NUEVO CUPÓN MODULAR EN VENTANA FLOTANTE              -->
+    <!-- =================================================================== -->
+    <div id="modalCrearCupon" class="modal-backdrop hidden" onclick="cerrarModalCrearCupon()">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <span class="nautical-pill">🎟️ NUEVO CUPÓN DE DESCUENTO</span>
+                    <h2>Registrar Cupón Modular en Base de Datos</h2>
+                </div>
+                <button class="modal-close-btn" onclick="cerrarModalCrearCupon()" title="Cerrar">✕</button>
+            </div>
+
+            <div class="modal-content-body">
+                <div class="admin-form-section" style="margin-top:0;">
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="inputCuponNombre">Nombre del Cupón:</label>
+                            <input type="text" id="inputCuponNombre" placeholder="Ej. Bono Especial Verano S/ 50">
+                        </div>
+                        <div>
+                            <label for="inputCuponCodigo">Código Único:</label>
+                            <input type="text" id="inputCuponCodigo" placeholder="Ej. VERANO-50">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="inputCuponDescripcion">¿Qué hace este cupón? (Descripción):</label>
+                        <input type="text" id="inputCuponDescripcion" placeholder="Ej. Descuenta S/ 50 en artículos con precio superior a S/ 50">
+                    </div>
+
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="selectCuponTipo">Tipo de Beneficio:</label>
+                            <select id="selectCuponTipo" onchange="ajustarInputValorSegunTipoCupon()">
+                                <option value="MONTO_FIJO">Descuento de Monto Fijo (S/)</option>
+                                <option value="PORCENTAJE">Descuento Porcentual (%)</option>
+                                <option value="PROMO_2X1">Promoción 2x1 (Deja producto bonificado en S/ 0.00)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="inputCuponValor">Valor del Descuento:</label>
+                            <input type="number" id="inputCuponValor" value="50" min="0" step="0.50">
+                        </div>
+                    </div>
+
+                    <p id="notaReglaModalCupon" class="helper-text" style="font-size:0.83rem; color:#0f766e;">
+                        💡 Regla automática: Los cupones de monto fijo solo podrán aplicarse a productos cuyo precio sea estrictamente mayor al descuento.
+                    </p>
+                </div>
+
+                <div class="modal-footer-actions">
+                    <button class="btn btn-sand" onclick="cerrarModalCrearCupon()">Cancelar</button>
+                    <button class="btn btn-ocean" onclick="guardarNuevoCuponModal()">💾 Crear y Guardar Cupón</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- FOOTER INFORMATIVO DE LA TIENDA DE PESCA                            -->
+    <!-- =================================================================== -->
     <footer class="site-footer">
         <div class="footer-container">
             <div class="footer-col">
@@ -342,11 +478,13 @@
                     <strong>COMERCIAL SERNAQUE</strong>
                 </div>
                 <p class="footer-desc">
-                    Tienda de venta de articulos de pesca.
+                    Tienda especializada en equipamiento de pesca. Sistema autoservicio asistido por Inteligencia Artificial para consulta de stock y clasificación técnica en tiempo real.
                 </p>
                 <div class="footer-badges">
-                    <span class="footer-badge">📍 MZ. P LT 21 PJ. TUPAC AMARU SECHURA-SECHURA-PIURA</span>
-                    <span class="footer-badge">📞 RUC: 10416589581</span>
+                    <span class="footer-badge">
+                        📍 MZ. P LT 21 PJ. TUPAC AMARU SECHURA-SECHURA-PIURA
+                    </span>
+                    <span class="footer-badge">📞 Central: (073) 458-920</span>
                 </div>
             </div>
 
@@ -356,6 +494,7 @@
                     <li><strong>Lunes a Viernes:</strong> 08:00 AM – 08:00 PM</li>
                     <li><strong>Sábados:</strong> 06:30 AM – 09:00 PM</li>
                     <li><strong>Domingos y Feriados:</strong> 07:00 AM – 02:00 PM</li>
+                    <li><strong>Despacho en Caja:</strong> Presentando código o SKU del Kiosco</li>
                 </ul>
             </div>
 
@@ -376,13 +515,13 @@
                     <p><strong>Terminal:</strong> Kiosco Táctil Principal #01</p>
                     <p><strong>Motor de Datos:</strong> Microsoft SQL Server</p>
                     <p><strong>Arquitectura:</strong> Monolito Modular en Python</p>
-                    <p class="tooltip-hint">💡 <em>Tip: Mantén el cursor 1.2 s sobre cualquier título o control para ver su código de trazabilidad Scrum.</em></p>
+                    <p class="tooltip-hint">💡 <em>Tip: Mantén el cursor 1.2 s sobre cualquier título o control para ver su código Scrum.</em></p>
                 </div>
             </div>
         </div>
 
         <div class="footer-bottom">
-            <span>&copy; 2026 Mar &amp; Río Tackle Pro · Sistema Inteligente de Ayuda para Tienda de Pesca.</span>
+            <span>&copy; 2026 COMERCIAL SERNAQUE · Sistema Inteligente de Ayuda para Tienda de Pesca.</span>
             <a href="javascript:void(0)" onclick="regresarPaginaInicial()">⬆ Volver arriba / Inicio</a>
         </div>
     </footer>

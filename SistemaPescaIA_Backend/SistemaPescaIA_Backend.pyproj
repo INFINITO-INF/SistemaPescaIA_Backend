@@ -81,6 +81,10 @@
     </Content>
     <Content Include="requirements.txt" />
     <Content Include="Static\css\styles.css" />
+    <Content Include="Static\img\default_no_image.jpg" />
+    <Content Include="Static\img\grupos\okuma_canas.jpg" />
+    <Content Include="Static\img\grupos\shimano_canas.jpg" />
+    <Content Include="Static\img\grupos\shimano_carretes.jpg" />
     <Content Include="Static\js\sprint1.js" />
     <Content Include="Templates\sprint1_ui.html" />
   </ItemGroup>
@@ -91,7 +95,9 @@
     <Folder Include="modules\busqueda_vision\" />
     <Folder Include="Static\" />
     <Folder Include="Static\css\" />
+    <Folder Include="Static\img\grupos\" />
     <Folder Include="Static\js\" />
+    <Folder Include="Static\img\" />
     <Folder Include="Templates\" />
     <Folder Include="tests\" />
   </ItemGroup>

@@ -2,28 +2,24 @@ from config.settings import Settings
 from modules.busqueda_vision.repository import BusquedaRepository
 
 class BusquedaService:
-    """Lógica de negocio para Búsqueda por Texto (US001) y Categorías (US002)."""
+    """Lógica de negocio para Búsqueda por Texto, Etiquetas (US001) y Categorías (US002)."""
 
     def __init__(self, repo: BusquedaRepository = None):
         self.repo = repo or BusquedaRepository()
 
-    # =========================================================================
-    # US001: Buscar productos ingresando texto por nombre, código o marca (CA001-CA004)
-    # =========================================================================
     @staticmethod
     def validar_minimo_autocompletado(texto: str) -> bool:
         """CA002: Verifica si el texto tiene al menos 3 caracteres."""
         return len((texto or "").strip()) >= Settings.MIN_AUTOCOMPLETE_CHARS
 
     def buscar_por_texto(self, termino: str) -> dict:
-        """CA001 y CA003: Búsqueda por coincidencia o retorno de mensaje sin resultados."""
-        termino_limpio = (termino or "").strip()
+        """CA001 y CA003: Busca por nombre, marca, código SKU o etiqueta técnica."""
+        termino_limpio = (termino or "").replace("🏷️ Etiqueta:", "").strip()
         if not termino_limpio:
             return self.limpiar_campo_busqueda()
 
         filas = self.repo.buscar_productos_por_termino(termino_limpio)
         if not filas:
-            # CA003: Mensaje exacto y sugerencia de categorías generales
             return {
                 "termino_buscado": termino_limpio,
                 "tuvo_resultados": False,
@@ -38,8 +34,13 @@ class BusquedaService:
                 "sku": r.sku,
                 "nombre": r.nombre,
                 "marca": r.marca,
+                "id_categoria": r.id_categoria,
+                "categoria_nombre": r.categoria_nombre,
+                "precio_regular": float(r.precio_unitario),
                 "precio_vigente": float(r.precio_promocion if r.precio_promocion is not None else r.precio_unitario),
+                "en_promocion": r.precio_promocion is not None,
                 "stock_actual": r.stock_actual,
+                "url_imagen": r.url_imagen_grupo,
             }
             for r in filas
         ]
@@ -51,7 +52,7 @@ class BusquedaService:
         }
 
     def autocompletar(self, texto_parcial: str) -> dict:
-        """CA002: Sugerencias automáticas tras digitar al menos 3 caracteres."""
+        """CA002: Sugerencias automáticas de productos y etiquetas tras digitar >= 3 caracteres."""
         texto_limpio = (texto_parcial or "").strip()
         if not self.validar_minimo_autocompletado(texto_limpio):
             return {"Autocompletado_activo": False, "sugerencias": []}
@@ -68,9 +69,6 @@ class BusquedaService:
             "categorias_principales": self.listar_categorias_principales(),
         }
 
-    # =========================================================================
-    # US002: Navegar por categorías y subcategorías visuales de pesca (CA005-CA007)
-    # =========================================================================
     def listar_categorias_principales(self) -> list[dict]:
         """CA005 y CA007: Obtiene las categorías principales del menú."""
         filas = self.repo.obtener_categorias_principales()
@@ -92,8 +90,11 @@ class BusquedaService:
                 "marca": p.marca,
                 "id_categoria": p.id_categoria,
                 "categoria_nombre": p.categoria_nombre,
+                "precio_regular": float(p.precio_unitario),
                 "precio_vigente": float(p.precio_promocion if p.precio_promocion is not None else p.precio_unitario),
+                "en_promocion": p.precio_promocion is not None,
                 "stock_actual": p.stock_actual,
+                "url_imagen": p.url_imagen_grupo,
             }
             for p in productos
         ]
