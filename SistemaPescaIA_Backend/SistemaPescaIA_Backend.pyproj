@@ -12,6 +12,7 @@
     <Name>SistemaPescaIA_Backend</Name>
     <RootNamespace>SistemaPescaIA_Backend</RootNamespace>
     <TestFramework>Pytest</TestFramework>
+    <InterpreterId>MSBuild|env 3.14.10|$(MSBuildProjectFullPath)</InterpreterId>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,6 +33,14 @@
     <Compile Include="config\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="modules\administracion\repository.py" />
+    <Compile Include="modules\administracion\routes.py" />
+    <Compile Include="modules\administracion\service_admin.py" />
+    <Compile Include="modules\administracion\__init__.py" />
+    <Compile Include="modules\asesor_ia\repository.py" />
+    <Compile Include="modules\asesor_ia\routes.py" />
+    <Compile Include="modules\asesor_ia\service_asesor.py" />
+    <Compile Include="modules\asesor_ia\__init__.py" />
     <Compile Include="modules\busqueda_vision\repository.py">
       <SubType>Code</SubType>
     </Compile>
@@ -41,6 +50,7 @@
     <Compile Include="modules\busqueda_vision\service_busqueda.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="modules\busqueda_vision\service_vision_ia.py" />
     <Compile Include="modules\busqueda_vision\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -68,9 +78,11 @@
     <Compile Include="tests\test_acceptance_sprint1.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\test_acceptance_sprint2.py" />
     <Compile Include="tests\test_cases_sprint1.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="tests\test_cases_sprint2.py" />
     <Compile Include="tests\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -85,14 +97,19 @@
     <Content Include="Static\img\grupos\okuma_canas.jpg" />
     <Content Include="Static\img\grupos\shimano_canas.jpg" />
     <Content Include="Static\img\grupos\shimano_carretes.jpg" />
-    <Content Include="Static\js\sprint1.js" />
-    <Content Include="Templates\sprint1_ui.html" />
+    <Content Include="Static\js\admin_panel.js" />
+    <Content Include="Static\js\common.js" />
+    <Content Include="Static\js\ui_kiosco.js" />
+    <Content Include="Templates\admin.html" />
+    <Content Include="Templates\ui.html" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="config\" />
     <Folder Include="modules\" />
     <Folder Include="modules\catalogo_inventario\" />
     <Folder Include="modules\busqueda_vision\" />
+    <Folder Include="modules\asesor_ia\" />
+    <Folder Include="modules\administracion\" />
     <Folder Include="Static\" />
     <Folder Include="Static\css\" />
     <Folder Include="Static\img\grupos\" />
@@ -100,6 +117,21 @@
     <Folder Include="Static\img\" />
     <Folder Include="Templates\" />
     <Folder Include="tests\" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|PythonCore|3.14" />
+    <InterpreterReference Include="Global|PythonCore|3.15" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env 3.14.10\">
+      <Id>env 3.14.10</Id>
+      <Version>3.14</Version>
+      <Description>env 3.14.10 (Python 3.14.10)</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
