@@ -1281,3 +1281,33 @@ select option:disabled {
     object-fit: contain;
 
 }
+
+.tech-filters-row-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+    background: #f0f9ff;
+    border: 1px solid #bae6fd;
+    border-left: 4px solid var(--ocean-primary);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+    animation: fadeInMenu 0.18s ease-out;
+}
+
+    .tech-filters-row-panel select,
+    .tech-filters-row-panel input {
+        flex: 1 1 140px;
+        min-width: 130px;
+        padding: 0.52rem 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        font-size: 0.86rem;
+        background: #fff;
+    }
+
+    .tech-filters-row-panel .btn {
+        padding: 0.54rem 1rem;
+        font-size: 0.85rem;
+    }

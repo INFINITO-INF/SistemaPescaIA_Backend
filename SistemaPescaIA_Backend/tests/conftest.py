@@ -4,12 +4,14 @@ import pytest
 from app import create_app
 from modules.catalogo_inventario.service import CatalogoInventarioService
 from modules.busqueda_vision.service_busqueda import BusquedaService
+from modules.busqueda_vision.service_vision_ia import VisionIAService
+from modules.asesor_ia.service_asesor import AsesorIAService
+from modules.administracion.service_admin import AdministracionService
 
-logger = logging.getLogger("AuditoriaPruebasSprint1")
+logger = logging.getLogger("AuditoriaPruebas")
 
 
 class VerboseTestClient:
-    """Envuelve el test_client de Flask para registrar automáticamente entradas y salidas en Visual Studio."""
 
     def __init__(self, flask_client):
         self._client = flask_client
@@ -18,11 +20,17 @@ class VerboseTestClient:
         datos_resp = response.get_json(silent=True)
         resp_formateada = json.dumps(datos_resp, ensure_ascii=False, indent=2) if datos_resp else response.get_data(as_text=True)
 
+        info_entrada = ""
+        if isinstance(payload, dict) and any(hasattr(v, "read") or isinstance(v, tuple) for v in payload.values()):
+            info_entrada = f"\n[DATOS ENTRADA] <Archivo Multipart: {list(payload.keys())}>"
+        elif payload is not None:
+            info_entrada = f"\n[DATOS ENTRADA] {json.dumps(payload, ensure_ascii=False)}"
+
         mensaje = (
             f"\n[PETICIÓN API]  {metodo} {url}"
-            + (f"\n[DATOS ENTRADA] {json.dumps(payload, ensure_ascii=False)}" if payload is not None else "")
-            + f"\n[CÓDIGO HTTP]   {response.status_code}"
-            + f"\n[RESPUESTA JSON]\n{resp_formateada}\n"
+            f"{info_entrada}"
+            f"\n[CÓDIGO HTTP]   {response.status_code}"
+            f"\n[RESPUESTA JSON]\n{resp_formateada}\n"
         )
         logger.info(mensaje)
         print(mensaje)
@@ -33,7 +41,7 @@ class VerboseTestClient:
         return self._log_exchange("GET", url, None, resp)
 
     def post(self, url: str, **kwargs):
-        payload = kwargs.get("json")
+        payload = kwargs.get("json") if "json" in kwargs else kwargs.get("data")
         resp = self._client.post(url, **kwargs)
         return self._log_exchange("POST", url, payload, resp)
 
@@ -45,7 +53,6 @@ class VerboseTestClient:
 
 @pytest.fixture(autouse=True)
 def bitacora_automatica_prueba(request):
-    """Imprime automáticamente el encabezado, descripción y resultado de cada prueba en Test Explorer."""
     nombre_test = request.node.name
     descripcion = (request.node.obj.__doc__ or "Ejecución de caso de prueba automatizado.").strip()
     marcadores = [m.name.upper() for m in request.node.iter_markers()]
@@ -60,14 +67,8 @@ def bitacora_automatica_prueba(request):
     )
     logger.info(encabezado)
     print(encabezado)
-
     yield
-
-    cierre = (
-        f"{'-' * 75}\n"
-        f"VEREDICTO FINAL   : APROBADO (PASSED) -> {nombre_test}\n"
-        f"{'=' * 75}\n"
-    )
+    cierre = f"{'-' * 75}\nVEREDICTO FINAL   : APROBADO (PASSED) -> {nombre_test}\n{'=' * 75}\n"
     logger.info(cierre)
     print(cierre)
 
@@ -81,7 +82,6 @@ def flask_app():
 
 @pytest.fixture(scope="session")
 def client(flask_app):
-    """Cliente de pruebas HTTP con trazabilidad detallada para el resumen de Visual Studio."""
     return VerboseTestClient(flask_app.test_client())
 
 
@@ -93,3 +93,18 @@ def catalogo_service():
 @pytest.fixture(scope="session")
 def busqueda_service():
     return BusquedaService()
+
+
+@pytest.fixture(scope="session")
+def vision_service():
+    return VisionIAService()
+
+
+@pytest.fixture(scope="session")
+def asesor_service():
+    return AsesorIAService()
+
+
+@pytest.fixture(scope="session")
+def admin_service():
+    return AdministracionService()

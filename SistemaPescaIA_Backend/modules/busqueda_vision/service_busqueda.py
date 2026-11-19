@@ -116,3 +116,71 @@ class BusquedaService:
             "id_categoria_seleccionada": None,
             "categorias_principales": self.listar_categorias_principales(),
         }
+
+    # US003: Filtrar resultados por atributos técnicos 
+    def obtener_opciones_filtros(self) -> dict:
+        return self.repo.obtener_opciones_filtros_tecnicos()
+
+    def filtrar_por_atributos_tecnicos(self, filtros: dict) -> dict:
+        """TA07-01 y TA07-02 / CA008 y CA009: Aplica filtros combinados sobre resultados activos."""
+        termino = (filtros.get("termino") or "").strip() or None
+        id_categoria = int(filtros["id_categoria"]) if filtros.get("id_categoria") else None
+        marca = (filtros.get("marca") or "").strip() or None
+        resistencia_min = float(filtros["resistencia_min_lb"]) if filtros.get("resistencia_min_lb") not in (None, "") else None
+        resistencia_max = float(filtros["resistencia_max_lb"]) if filtros.get("resistencia_max_lb") not in (None, "") else None
+        peso_max = float(filtros["peso_max_gr"]) if filtros.get("peso_max_gr") not in (None, "") else None
+        precio_min = float(filtros["precio_min"]) if filtros.get("precio_min") not in (None, "") else None
+        precio_max = float(filtros["precio_max"]) if filtros.get("precio_max") not in (None, "") else None
+        potencia = (filtros.get("potencia") or "").strip() or None
+        entorno = (filtros.get("entorno") or "").strip() or None
+
+        filas = self.repo.filtrar_productos_multi_atributo(
+            termino=termino,
+            id_categoria=id_categoria,
+            marca=marca,
+            resistencia_min_lb=resistencia_min,
+            resistencia_max_lb=resistencia_max,
+            peso_max_gr=peso_max,
+            precio_min=precio_min,
+            precio_max=precio_max,
+            potencia=potencia,
+            entorno=entorno,
+        )
+
+        if not filas:
+            return {
+                "tuvo_resultados": False,
+                "mensaje": "No hay coincidencias exactas para esa combinación de filtros técnicos",
+                "habilitar_restablecer_filtros": True,
+                "filtros_aplicados": filtros,
+                "resultados": [],
+            }
+
+        resultados = [
+            {
+                "id_producto": r.id_producto,
+                "sku": r.sku,
+                "nombre": r.nombre,
+                "marca": r.marca,
+                "id_categoria": r.id_categoria,
+                "categoria_nombre": r.categoria_nombre,
+                "precio_regular": float(r.precio_unitario),
+                "precio_vigente": float(r.precio_promocion if r.precio_promocion is not None else r.precio_unitario),
+                "en_promocion": r.precio_promocion is not None,
+                "stock_actual": r.stock_actual,
+                "resistencia_min_lb": float(r.resistencia_min_lb) if r.resistencia_min_lb is not None else None,
+                "resistencia_max_lb": float(r.resistencia_max_lb) if r.resistencia_max_lb is not None else None,
+                "peso_gr": float(r.peso_gr) if r.peso_gr is not None else None,
+                "potencia": r.potencia,
+                "entorno_recomendado": r.entorno_recomendado,
+                "url_imagen": r.url_imagen_grupo,
+            }
+            for r in filas
+        ]
+        return {
+            "tuvo_resultados": True,
+            "mensaje": "Filtrado técnico aplicado exitosamente",
+            "habilitar_restablecer_filtros": True,
+            "filtros_aplicados": filtros,
+            "resultados": resultados,
+        }

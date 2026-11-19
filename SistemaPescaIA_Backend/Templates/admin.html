@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMERCIAL SERNAQUE | Panel de Administración</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <!-- =================================================================== -->
+    <!-- PANTALLA DE BLOQUEO OBLIGATORIO CON PIN ANTES DE MOSTRAR CONTROLES  -->
+    <!-- =================================================================== -->
+    <div id="lockScreenAdmin" class="modal-backdrop" style="z-index:600; background:#07192b;">
+        <div class="modal-dialog" style="max-width:460px; text-align:center;">
+            <div class="modal-top" style="justify-content:center;">
+                <div>
+                    <span class="nautical-pill">🔐 SEGURIDAD ADMINISTRATIVA</span>
+                    <h2>Panel de Administración Bloqueado</h2>
+                </div>
+            </div>
+            <div class="modal-content-body">
+                <p style="color:#475569; margin-bottom:1.1rem; font-size:0.93rem;">
+                    Todas las funciones de gestión de catálogo, cupones y modo mantenimiento están protegidas. Introduce el <strong>PIN de Administrador</strong> para continuar.
+                </p>
+                <div class="form-grid-inline">
+                    <input type="password" id="inputPinLockScreen" placeholder="PIN Administrador"
+                           onkeydown="if(event.key === 'Enter') desbloquearPanelAdminDesdeLockScreen()">
+                    <button class="btn btn-ocean" onclick="desbloquearPanelAdminDesdeLockScreen()">🔓 Desbloquear</button>
+                </div>
+                <p id="errorPinLockScreen" style="color:#b91c1c; font-size:0.85rem; margin-top:0.65rem; font-weight:600;"></p>
+                <div style="margin-top:1.25rem; border-top:1px solid #e2e8f0; padding-top:0.85rem;">
+                    <a href="/" style="color:#0284c7; font-size:0.86rem; font-weight:600; text-decoration:none;">
+                        ⬅ Volver al Kiosco Público de Clientes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- HEADER DEL ADMINISTRADOR                                            -->
+    <!-- =================================================================== -->
+    <header class="main-header">
+        <div class="header-container">
+            <div class="header-left-group">
+                <a href="/" class="brand-logo" data-scrum="Regresar al Kiosco Público">
+                    <div class="logo-emblem">🎣</div>
+                    <div class="brand-text">
+                        <span class="brand-title"><strong>COMERCIAL SERNAQUE</strong></span>
+                        <span class="brand-subtitle">Módulo Administrativo · Gestión de Catálogo & Kiosco</span>
+                    </div>
+                </a>
+            </div>
+
+            <div class="header-admin-corner" style="gap:0.65rem;">
+                <button class="btn btn-outline-teal" style="color:#5eead4; border-color:#5eead4;"
+                        onclick="bloquearYCerrarSesionAdmin()"
+                        data-scrum="Bloquear panel administrativo y volver al Kiosco">
+                    🔒 Bloquear y Salir
+                </button>
+                <a href="/" class="btn btn-sand" style="text-decoration:none;">
+                    🛒 Ir al Kiosco
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- =================================================================== -->
+    <!-- CONTENIDO ADMINISTRATIVO (OCULTO HASTA VALIDAR PIN)                 -->
+    <!-- =================================================================== -->
+    <main id="contenidoAdminProtegido" class="main-container hidden">
+        <div class="admin-banner">
+            <div>
+                <span class="nautical-pill">🛠️ SESIÓN ADMINISTRATIVA ACTIVA</span>
+                <h2 data-scrum="EPIC03 & EPIC05 · Gestión de Catálogo, Etiquetas, Cupones y Modo Mantenimiento">
+                    Panel de Control de Catálogo, Etiquetado IA y Precios
+                </h2>
+                <p>Administra el estado operativo del kiosco, indexa etiquetas técnicas y gestiona descuentos por SKU.</p>
+            </div>
+        </div>
+
+        <!-- 1. Control Operativo del Kiosco (Modo Mantenimiento - US017) -->
+        <div class="surface-card">
+            <div class="card-header-bar" style="margin-bottom:0.5rem;">
+                <div>
+                    <h3 class="section-title" data-scrum="US017 / CA040 & CA041 · Control de modo Fuera de Servicio / Mantenimiento">
+                        🔒 Control Operativo del Kiosco (Modo Mantenimiento)
+                    </h3>
+                    <p class="section-subtitle">Bloquea temporalmente las consultas públicas del kiosco mientras actualizas inventario o modelos.</p>
+                </div>
+                <span id="badgeEstadoMantenimientoAdmin" class="stock-badge stock-verde">● Kiosco Operativo</span>
+            </div>
+            <div class="form-grid-inline" style="margin-top:0.75rem; align-items:center;">
+                <input type="password" id="inputPinMantenimiento" placeholder="Confirma PIN de Administrador" style="max-width:250px;">
+                <button class="btn btn-ocean" onclick="cambiarModoMantenimientoUI(true)">⛔ Activar Mantenimiento</button>
+                <button class="btn btn-outline-teal" onclick="cambiarModoMantenimientoUI(false)">✅ Reactivar Servicio</button>
+                <span id="feedbackMantenimiento" class="inline-feedback"></span>
+            </div>
+        </div>
+
+        <!-- 2. Etiquetado Técnico + Gestión Modular de Cupones -->
+        <div class="admin-panels-grid">
+            <!-- Columna 1: Clasificación y Etiquetado Técnico -->
+            <div class="surface-card">
+                <h3 class="section-title" data-scrum="US009 · Clasificar y etiquetar productos por categorías y atributos técnicos">
+                    🏷️ Clasificación y Etiquetado Técnico para IA
+                </h3>
+                <p class="section-subtitle">Las etiquetas indexadas permiten encontrar artículos rápidamente desde el buscador del kiosco.</p>
+
+                <div class="admin-form-section">
+                    <h4 data-scrum="US009 / CA022 · Sugerencia automática de etiquetas al registrar descripción">
+                        1. Asistente de Etiquetado por IA (Experimental / Pre-API)
+                    </h4>
+                    <label for="txtDescripcionIA">Ingresa la descripción técnica de un artículo para detectar etiquetas:</label>
+                    <textarea id="txtDescripcionIA" rows="2"
+                              placeholder="Escribe aquí la descripción técnica del producto (ej. Caña ligera para trucha en río modalidad spinning)..."></textarea>
+                    <div class="action-buttons-row">
+                        <button class="btn btn-ocean" onclick="sugerirEtiquetasIA()">✨ Analizar Texto con IA</button>
+                        <button class="btn btn-sand" onclick="limpiarAsistenteIA()">Limpiar</button>
+                    </div>
+                    <div id="resultadoSugerenciasIA" class="tags-cloud"></div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="admin-form-section">
+                    <h4 data-scrum="US009 / CA021 · Creación manual de nuevas etiquetas técnicas en el catálogo">
+                        2. Crear Nueva Etiqueta Técnica Manualmente
+                    </h4>
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="inputNuevaEtiquetaNombre">Nombre de la Etiqueta:</label>
+                            <input type="text" id="inputNuevaEtiquetaNombre" placeholder="Ej. Róbalo, Jigging, Alta Mar...">
+                        </div>
+                        <div>
+                            <label for="selectNuevaEtiquetaTipo">Categoría / Tipo:</label>
+                            <select id="selectNuevaEtiquetaTipo">
+                                <option value="Especie">Especie Objetivo</option>
+                                <option value="Modalidad">Modalidad de Pesca</option>
+                                <option value="Entorno">Entorno / Agua</option>
+                                <option value="Material">Material / Acción</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="action-buttons-row">
+                        <button class="btn btn-outline-teal" onclick="crearEtiquetaManualUI()">➕ Registrar Etiqueta en Catálogo</button>
+                        <span id="mensajeCreacionEtiqueta" class="inline-feedback"></span>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="admin-form-section">
+                    <h4 data-scrum="US009 / CA021 & CA023 · Administración interactiva de etiquetas por producto">
+                        3. Administrar Etiquetas Indexadas por Producto
+                    </h4>
+                    <label for="selectProdEtiqueta">Selecciona un producto del catálogo:</label>
+                    <select id="selectProdEtiqueta" onchange="mostrarResumenEtiquetasProducto()"></select>
+
+                    <div class="product-tags-preview-box">
+                        <span class="preview-label">Etiquetas actualmente vinculadas:</span>
+                        <div id="vistaPreviaEtiquetasProducto" class="tags-cloud"></div>
+                    </div>
+
+                    <button class="btn btn-ocean" onclick="abrirModalGestionEtiquetas()">
+                        🗂️ Administrar Etiquetas en Ventana Flotante
+                    </button>
+                </div>
+            </div>
+
+            <!-- Columna 2: Gestión de Cupones y Selección por Marca -> Tipo -> SKU -->
+            <div class="surface-card">
+                <div class="card-header-bar" style="margin-bottom:0.5rem;">
+                    <div>
+                        <h3 class="section-title" data-scrum="US012 · Sincronizar precios y gestionar descuentos modulares">
+                            🎟️ Gestión Modular de Cupones y Descuentos por SKU
+                        </h3>
+                        <p class="section-subtitle">Selecciona un cupón y aplícalo por Marca, Tipo de Producto y SKU individual.</p>
+                    </div>
+                    <button class="btn btn-ocean" onclick="abrirModalCrearCupon()">➕ Crear Nuevo Cupón</button>
+                </div>
+
+                <div class="admin-form-section">
+                    <h4>1. Elegir Cupón a Aplicar</h4>
+                    <label for="selectCuponActivo">Selecciona un cupón del catálogo:</label>
+                    <select id="selectCuponActivo" onchange="actualizarElegibilidadProductosSegunCupon()"></select>
+                    <div id="infoReglaCuponSeleccionado" class="coupon-rule-banner"></div>
+                </div>
+
+                <div class="admin-form-section">
+                    <h4>2. Seleccionar Producto por Marca, Tipo y SKU Individual</h4>
+                    <div class="form-grid-3">
+                        <div>
+                            <label for="selectFiltroMarca">Marca:</label>
+                            <select id="selectFiltroMarca" onchange="actualizarSelectorTiposPorMarca()"></select>
+                        </div>
+                        <div>
+                            <label for="selectFiltroTipo">Subproducto / Tipo:</label>
+                            <select id="selectFiltroTipo" onchange="actualizarSelectorSKUsPorMarcaYTipo()"></select>
+                        </div>
+                        <div>
+                            <label for="selectSKUIndividual">Producto (SKU Individual):</label>
+                            <select id="selectSKUIndividual"></select>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons-row" style="margin-top:0.5rem;">
+                        <button class="btn btn-ocean" onclick="aplicarCuponSeleccionadoAlSKU()">✅ Aplicar Cupón al SKU</button>
+                        <button class="btn btn-sand" onclick="quitarCuponDeSKUSeleccionado()">🔄 Quitar Cupón</button>
+                    </div>
+                    <div id="mensajeResultadoCupon" class="inline-feedback"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Tabla Completa de Auditoría de Precios -->
+        <div class="surface-card">
+            <div class="card-header-bar">
+                <div>
+                    <h3 class="section-title" data-scrum="US012 / CA029 & CA030 · Auditoría en tiempo real de todos los productos del catálogo">
+                        📊 Tabla General de Auditoría de Precios e Inventario en BD Central
+                    </h3>
+                    <p class="section-subtitle">Visualiza todos los productos registrados con su SKU único, stock disponible, precio actual, precio promocional y cupón activo.</p>
+                </div>
+                <button class="btn btn-outline-teal" onclick="cargarDatosAuditoriaYCupones()">🔄 Refrescar Tabla</button>
+            </div>
+            <div id="contenedorTablaAuditoriaPrecios" class="audit-table-wrapper"></div>
+        </div>
+    </main>
+
+    <!-- MODAL ETIQUETAS DEL PRODUCTO -->
+    <div id="modalGestionEtiquetas" class="modal-backdrop hidden" onclick="cerrarModalGestionEtiquetas()">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <span class="nautical-pill">🏷️ GESTIÓN DE ÍNDICE IA</span>
+                    <h2 id="tituloModalEtiquetas">Administrar Etiquetas del Producto</h2>
+                </div>
+                <button class="modal-close-btn" onclick="cerrarModalGestionEtiquetas()">✕</button>
+            </div>
+            <div class="modal-content-body">
+                <p id="subtituloModalEtiquetas" style="color:#475569; margin-bottom:1rem; font-size:0.92rem;"></p>
+                <div class="tag-editor-section">
+                    <label class="editor-label">Etiquetas asignadas (haz clic en <strong>✕</strong> para desvincular):</label>
+                    <div id="contenedorChipsEditables" class="editable-tags-box"></div>
+                </div>
+                <div class="tag-editor-section" style="margin-top:1.25rem;">
+                    <label class="editor-label">Vincular etiqueta existente:</label>
+                    <div class="form-grid-inline">
+                        <select id="selectAgregarEtiquetaModal"></select>
+                        <button class="btn btn-outline-teal" onclick="agregarEtiquetaEnBorradorModal()">➕ Añadir</button>
+                    </div>
+                </div>
+                <div class="modal-footer-actions">
+                    <button class="btn btn-sand" onclick="cerrarModalGestionEtiquetas()">Descartar / No Guardar</button>
+                    <button class="btn btn-ocean" onclick="guardarCambiosEtiquetasModal()">💾 Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR CUPÓN -->
+    <div id="modalCrearCupon" class="modal-backdrop hidden" onclick="cerrarModalCrearCupon()">
+        <div class="modal-dialog" onclick="event.stopPropagation()">
+            <div class="modal-top">
+                <div>
+                    <span class="nautical-pill">🎟️ NUEVO CUPÓN DE DESCUENTO</span>
+                    <h2>Registrar Cupón Modular en Base de Datos</h2>
+                </div>
+                <button class="modal-close-btn" onclick="cerrarModalCrearCupon()">✕</button>
+            </div>
+            <div class="modal-content-body">
+                <div class="admin-form-section" style="margin-top:0;">
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="inputCuponNombre">Nombre del Cupón:</label>
+                            <input type="text" id="inputCuponNombre" placeholder="Ej. Bono Especial Verano S/ 50">
+                        </div>
+                        <div>
+                            <label for="inputCuponCodigo">Código Único:</label>
+                            <input type="text" id="inputCuponCodigo" placeholder="Ej. VERANO-50">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="inputCuponDescripcion">¿Qué hace este cupón? (Descripción):</label>
+                        <input type="text" id="inputCuponDescripcion" placeholder="Ej. Descuenta S/ 50 en artículos con precio superior a S/ 50">
+                    </div>
+                    <div class="form-grid-2">
+                        <div>
+                            <label for="selectCuponTipo">Tipo de Beneficio:</label>
+                            <select id="selectCuponTipo" onchange="ajustarInputValorSegunTipoCupon()">
+                                <option value="MONTO_FIJO">Descuento de Monto Fijo (S/)</option>
+                                <option value="PORCENTAJE">Descuento Porcentual (%)</option>
+                                <option value="PROMO_2X1">Promoción 2x1 (Deja producto bonificado en S/ 0.00)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="inputCuponValor">Valor del Descuento:</label>
+                            <input type="number" id="inputCuponValor" value="50" min="0" step="0.50">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer-actions">
+                    <button class="btn btn-sand" onclick="cerrarModalCrearCupon()">Cancelar</button>
+                    <button class="btn btn-ocean" onclick="guardarNuevoCuponModal()">💾 Crear y Guardar Cupón</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-bottom">
+            <span>© 2026 COMERCIAL SERNAQUE · Panel de Gestión Administrativa.</span>
+            <a href="/">🛒 Volver al Kiosco Público</a>
+        </div>
+    </footer>
+
+    <div id="scrumDelayedTooltip" class="scrum-tooltip hidden"></div>
+
+    <script src="{{ url_for('static', filename='js/common.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/admin_panel.js') }}"></script>
+</body>
+</html>
